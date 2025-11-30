@@ -1,0 +1,68 @@
+/* IntervYou Uniform Theme - Light Blue & White */
+
+:root {
+  /* Primary Colors - Light Blue */
+  --primary-50: #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;  /* Main light blue */
+  --primary-500: #0ea5e9;  /* Darker blue */
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+  --primary-800: #075985;
+  --primary-900: #0c4a6e;
+  
+  /* Accent */
+  --accent: #38bdf8;
+  --accent-dark: #0ea5e9;
+  
+  /* Backgrounds */
+  --bg-light: #ffffff;
+  --bg-light-alt: #f8fafc;
+  --bg-dark: #0f172a;
+  --bg-dark-alt: #1e293b;
+  
+  /* Text */
+  --text-light: #0f172a;
+  --text-light-secondary: #64748b;
+  --text-dark: #f8fafc;
+  --text-dark-secondary: #cbd5e1;
+}
+
+/* Tailwind Custom Config */
+.bg-primary { background-color: var(--primary-400); }
+.bg-primary-dark { background-color: var(--primary-500); }
+.text-primary { color: var(--primary-400); }
+.text-primary-dark { color: var(--primary-500); }
+.border-primary { border-color: var(--primary-400); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-500));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-500));
+}
+
+.gradient-hero {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%);
+  background-size: 200% 200%;
+  animation: gradientMove 12s ease infinite;
+}
+
+@keyframes gradientMove {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}

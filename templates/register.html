@@ -1,0 +1,72 @@
+{# templates/register.html #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Register - IntervYou</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=bluefix2">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+</head>
+<body>
+  <a href="/" style="position:fixed;left:18px;top:18px;z-index:1000;text-decoration:none;">
+    <div style="width:56px;height:56px;border-radius:10px;display:grid;place-items:center;
+                background:linear-gradient(135deg,#6ea8ff,#5de3d0);box-shadow:0 5px 18px rgba(0,0,0,0.4);">
+      <strong style="color:white;font-family:inherit;">AI</strong>
+    </div>
+  </a>
+
+  <div class="container" id="authContainer">
+    <div class="curved-shape"></div>
+    <div class="curved-shape2"></div>
+
+    <!-- REGISTER FORM -->
+    <div class="form-box Register">
+      <div class="animation">
+        <h2>Register</h2>
+        <form action="/register" method="post" novalidate>
+          <div class="input-box">
+            <input id="name" type="text" name="name" required>
+            <label for="name">Username</label>
+            <box-icon type='solid' name='user'></box-icon>
+          </div>
+
+          <div class="input-box">
+            <input id="email" type="email" name="email" required>
+            <label for="email">Email</label>
+            <box-icon name='envelope' type='solid'></box-icon>
+          </div>
+
+          <div class="input-box">
+            <input id="password" type="password" name="password" required>
+            <label for="password">Password</label>
+            <box-icon name='lock-alt' type='solid'></box-icon>
+          </div>
+
+          <div class="input-box" style="margin-top:20px;">
+            <button class="btn" type="submit">Register</button>
+          </div>
+
+          <div class="regi-link" style="margin-top:16px;">
+            <p>
+              Already registered?
+              <a href="#" class="SignInLink" data-mode="login" style="color:var(--accent2);font-weight:600;">Sign In</a>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="info-content Register">
+      <div class="animation">
+        <h2>WELCOME!</h2>
+        <p>We’re delighted to have you here. If you need any assistance, feel free to reach out.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+  <script src="{{ url_for('static', path='script.js') }}"></script>
+</body>
+</html>

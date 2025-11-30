@@ -1,0 +1,72 @@
+# ---- Core Web Framework ----
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+gunicorn>=22.0.0
+
+# ---- ORM & Database ----
+sqlalchemy>=2.0.25
+alembic>=1.13.1
+psycopg2-binary>=2.9.9     # Postgres adapter (optional for production)
+
+# ---- Async & HTTP utilities ----
+httpx>=0.27.0
+requests>=2.32.0
+
+# ---- Templates & Static Assets ----
+jinja2>=3.1.4
+python-multipart>=0.0.9
+
+# ---- Environment & Config ----
+python-dotenv>=1.0.1
+
+# ---- Security ----
+passlib[argon2]>=1.7.4
+itsdangerous>=2.2.0
+python-jose[cryptography]>=3.3.0
+
+# ---- OAuth & Social Login ----
+authlib>=1.3.0
+httpx>=0.27.0
+
+# ---- Email ----
+fastapi-mail>=1.4.1
+
+# ---- Audio / Video Processing ----
+moviepy>=1.0.3
+soundfile>=0.12.1
+librosa>=0.10.2
+gtts>=2.5.0
+opencv-python>=4.8.0
+imageio-ffmpeg>=0.4.9
+
+# ---- Advanced Video Analysis (Required for Enhanced Features) ----
+fer>=22.5.0                    # Facial Emotion Recognition
+deepface>=0.0.79               # Advanced facial analysis & micro-expressions
+mediapipe>=0.10.0              # Body pose, face mesh, and eye tracking
+SpeechRecognition>=3.10.0      # Audio transcription and filler word detection
+scipy>=1.11.0                  # Signal processing for voice analysis
+websockets>=12.0               # Real-time analysis support
+
+# ---- AI & ML helpers ----
+transformers>=4.44.0
+sentence-transformers>=3.0.1
+torch>=2.4.0
+torchaudio>=2.4.0
+scikit-learn>=1.5.1
+textblob>=0.18.0
+
+# ---- PDF Generation ----
+reportlab>=4.2.0
+
+# ---- Language Tools ----
+language-tool-python>=2.8.0
+
+# ---- Validation ----
+pydantic>=2.8.2
+pydantic-settings>=2.3.0
+typing-extensions>=4.12.2
+
+# ---- Development Tools (optional) ----
+# black>=24.8.0
+# flake8>=7.1.0
+# pytest>=8.3.0

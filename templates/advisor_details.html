@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" x-data="page()" x-init="init()" :class="dark ? 'dark' : ''">
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ plan.title }} — IntervYou</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body{font-family:'Inter',sans-serif}
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky-50 to-blue-50 dark:bg-slate-900 text-slate-900 dark:text-white antialiased px-6 py-12">
+  <!-- Theme Toggle Button -->
+  <button @click="toggleTheme()" title="Toggle theme" class="fixed top-6 right-6 z-50 p-3 rounded-lg bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl transition">
+    <template x-if="!dark">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-11.66l-.7.7M4.04 19.96l-.7-.7M21 12h-1M4 12H3m15.66 4.66l-.7-.7M4.04 4.04l-.7.7"/>
+      </svg>
+    </template>
+    <template x-if="dark">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z"/>
+      </svg>
+    </template>
+  </button>
+  <div class="max-w-3xl mx-auto bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="mb-6">
+      <h1 class="text-3xl font-extrabold text-sky-600 dark:text-sky-400 mb-2">{{ plan.title }}</h1>
+      <p class="text-slate-600 dark:text-slate-400">{{ plan.summary }}</p>
+    </div>
+
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-white">📋 Steps to Follow:</h2>
+      <ol class="space-y-3">
+        {% for step in plan.steps %}
+          <li class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-sky-500 text-white text-sm font-bold flex items-center justify-center">{{ loop.index }}</span>
+            <span class="text-sm text-slate-700 dark:text-slate-300">{{ step }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-white">🔗 Helpful Resources:</h2>
+      <ul class="space-y-2">
+        {% for link in plan.resources %}
+          <li class="p-3 rounded-lg bg-sky-50 dark:bg-slate-900 border border-sky-200 dark:border-slate-700">
+            <a href="{{ link.split(' - ')[0] }}" class="text-sky-600 dark:text-sky-400 hover:underline font-medium">
+              {{ link }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="flex gap-3">
+      <a href="/advisor" class="px-5 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition font-medium">⬅ Back to Advisor</a>
+      <a href="{{ plan.resources[0].split(' - ')[0] }}" class="px-5 py-2.5 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition font-medium">Start Now →</a>
+    </div>
+  </div>
+
+  <script>
+    function page(){ 
+      return { 
+        dark:false, 
+        init(){ 
+          const s=localStorage.getItem('iv_theme'); 
+          this.dark=s==='dark'; 
+          document.documentElement.classList.toggle('dark', this.dark); 
+        }, 
+        toggleTheme(){ 
+          this.dark=!this.dark; 
+          localStorage.setItem('iv_theme', this.dark?'dark':'light'); 
+          document.documentElement.classList.toggle('dark', this.dark); 
+        } 
+      } 
+    }
+  </script>
+</body>
+</html>

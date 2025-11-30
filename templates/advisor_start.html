@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" x-data="page()" x-init="init()" :class="dark ? 'dark' : ''">
+<head>
+  <meta charset="utf-8"/>
+  <title>Start Plan — IntervYou</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body{font-family:'Inter',sans-serif}
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky-400 via-sky-500 to-blue-500 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 text-white flex flex-col items-center justify-center min-h-screen text-center p-6">
+  <!-- Theme Toggle Button -->
+  <button @click="toggleTheme()" title="Toggle theme" class="fixed top-6 right-6 z-50 p-3 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-md transition">
+    <template x-if="!dark">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-11.66l-.7.7M4.04 19.96l-.7-.7M21 12h-1M4 12H3m15.66 4.66l-.7-.7M4.04 4.04l-.7.7"/>
+      </svg>
+    </template>
+    <template x-if="dark">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z"/>
+      </svg>
+    </template>
+  </button>
+  <div class="bg-white/10 backdrop-blur-lg p-10 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+    <div class="text-6xl mb-4">🚀</div>
+    <h1 class="text-3xl font-extrabold mb-4">Starting Your Learning Plan</h1>
+    <p class="text-xl mb-3 font-semibold">{{ plan_title }}</p>
+    <p class="text-sm opacity-90 mb-8 leading-relaxed">Your personalized learning session begins now. Get ready to practice, improve, and achieve your interview goals!</p>
+    
+    <div class="flex flex-col gap-3">
+      <a href="/practice" class="px-6 py-3 rounded-lg bg-white text-sky-600 hover:bg-white/90 font-semibold transition shadow-lg">
+        Start Practicing →
+      </a>
+      <a href="/mock_interview" class="px-6 py-3 rounded-lg bg-white/20 hover:bg-white/30 font-semibold transition border border-white/30">
+        Full Mock Interview
+      </a>
+      <a href="/advisor" class="text-sm opacity-75 hover:opacity-100 transition mt-2">
+        ← Back to Advisor
+      </a>
+    </div>
+  </div>
+  
+  <div class="mt-8 text-sm opacity-75">
+    <p>💡 Tip: Consistency is key. Practice a little every day for best results!</p>
+  </div>
+
+  <script>
+    function page(){ 
+      return { 
+        dark:false, 
+        init(){ 
+          const s=localStorage.getItem('iv_theme'); 
+          this.dark=s==='dark'; 
+          document.documentElement.classList.toggle('dark', this.dark); 
+        }, 
+        toggleTheme(){ 
+          this.dark=!this.dark; 
+          localStorage.setItem('iv_theme', this.dark?'dark':'light'); 
+          document.documentElement.classList.toggle('dark', this.dark); 
+        } 
+      } 
+    }
+  </script>
+</body>
+</html>

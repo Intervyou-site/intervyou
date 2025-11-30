@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test - IntervYou</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .debug {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+        .debug h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        .debug pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Login Test</h1>
+        <p class="subtitle">Simple login form for debugging</p>
+
+        {% if flashes %}
+            {% for f in flashes %}
+                <div class="message {{ f.cat }}">{{ f.msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="/login" id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    autocomplete="email"
+                    placeholder="your@email.com"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    autocomplete="current-password"
+                    placeholder="••••••••"
+                >
+            </div>
+
+            <button type="submit" id="submitBtn">Login</button>
+        </form>
+
+        <div class="link">
+            <a href="/login">← Back to main login</a>
+        </div>
+
+        <div class="debug">
+            <h3>Debug Info:</h3>
+            <pre id="debugInfo">Loading...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Show debug info
+        fetch('/api/session/check')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('debugInfo').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(e => {
+                document.getElementById('debugInfo').textContent = 'Error: ' + e.message;
+            });
+
+        // Handle form submission
+        const form = document.getElementById('loginForm');
+        const btn = document.getElementById('submitBtn');
+        
+        form.addEventListener('submit', function(e) {
+            btn.textContent = 'Logging in...';
+            btn.disabled = true;
+        });
+    </script>
+</body>
+</html>

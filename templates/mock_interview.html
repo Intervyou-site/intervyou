@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en" x-data="mockInterview()" x-init="init()" :class="dark ? 'theme-dark' : ''">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>🧠 Mock Interview — IntervYou</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="apple-touch-icon" href="/static/icons/icon-152x152.png">
+  <script src="/static/pwa-install.js" defer></script>
+
+  <!-- Tailwind + Alpine -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak]{display:none!important;}
+    @keyframes gradientMove {
+      0%,100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .animate-gradient {
+      background-size: 200% 200%;
+      animation: gradientMove 12s ease infinite;
+    }
+    .fade-slide-up {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 1s ease forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 antialiased">
+
+  <!-- ====== NAVBAR ====== -->
+  <nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-transparent">
+    <div class="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform" @click="goHome">
+      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 grid place-items-center text-white font-bold shadow-md">AI</div>
+      <span class="text-white font-semibold text-lg drop-shadow">IntervYou</span>
+    </div>
+
+    <button @click="toggleTheme()" title="Toggle Theme"
+            class="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition">
+      <template x-if="!dark">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m8.66-11.66l-.7.7M4.04 19.96l-.7-.7M21 12h-1M4 12H3m15.66 4.66l-.7-.7M4.04 4.04l-.7.7"/>
+        </svg>
+      </template>
+      <template x-if="dark">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z"/>
+        </svg>
+      </template>
+    </button>
+  </nav>
+
+  <!-- ====== HERO BACKGROUND ====== -->
+  <header class="relative min-h-[95vh] flex items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-300 animate-gradient"></div>
+    <div class="absolute inset-0 bg-black/40"></div>
+
+    <div class="relative z-10 w-full max-w-7xl px-6 grid grid-cols-1 lg:grid-cols-3 gap-10 items-start mt-20">
+
+      <!-- ====== MAIN INTERVIEW CARD ====== -->
+      <section class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-100 dark:border-slate-700 fade-slide-up">
+        <h1 class="text-3xl font-extrabold mb-1 text-slate-800 dark:text-white">🧠 AI Mock Interview</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          Answer questions in text or voice, get feedback instantly, and track your improvement.
+        </p>
+
+        <!-- Progress and Timer -->
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+            Question <span x-text="index+1"></span> of <span x-text="total"></span>
+          </h2>
+          <div class="flex items-center gap-4">
+            <div class="relative w-14 h-14">
+              <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                <defs>
+                  <linearGradient id="gradient" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#6366f1"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="44" stroke="rgba(0,0,0,0.1)" stroke-width="10" fill="none"/>
+                <circle cx="50" cy="50" r="44" stroke="url(#gradient)" stroke-width="10" fill="none"
+                        stroke-linecap="round" class="transition-all duration-700 ease-linear"
+                        :style="`stroke-dasharray: 276; stroke-dashoffset: ${dashOffset}`"></circle>
+              </svg>
+              <div class="absolute inset-0 grid place-items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                <span x-text="timeLeft"></span>s
+              </div>
+            </div>
+            <div class="w-32">
+              <div class="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-indigo-500 to-sky-400 transition-all duration-500"
+                     :style="`width:${progress}%`"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question -->
+        <div class="p-5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 mb-6">
+          <p id="questionText" class="text-base font-medium text-slate-800 dark:text-slate-100" x-text="question">Loading question...</p>
+          <div class="mt-3 flex gap-3">
+            <button @click="playQuestion()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
+              🔊 Play Question
+            </button>
+
+            <!-- Save question button (optimistic) -->
+            <button
+              x-bind:class="questionSaved ? 'px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold cursor-default' : 'px-4 py-2 rounded-lg bg-white/10 text-sm text-slate-100 hover:bg-white/20 transition'"
+              x-bind:disabled="questionSaved || savingInProgress"
+              x-text="questionSaved ? 'Saved ✓' : '⭐ Save Question'"
+              @click="saveQuestion()"
+              type="button"
+            ></button>
+          </div>
+        </div>
+
+        <!-- Answers Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+          <!-- Text Answer -->
+          <div>
+            <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">✍️ Type your answer</label>
+            <!-- Enter submits (Shift+Enter for newline) -->
+            <textarea id="answerText" x-model="answerText"
+              placeholder="Write your answer here..."
+              class="mt-2 w-full h-40 p-4 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-400 outline-none"
+              @keydown.enter.prevent="if(!$event.shiftKey) submitTextAnswer()"
+            ></textarea>
+            <div class="mt-3 flex gap-3">
+              <button @click="submitTextAnswer()" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Submit</button>
+              <button @click="skipQuestion()" class="px-5 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-90 transition">Skip</button>
+            </div>
+          </div>
+
+          <!-- Voice Answer -->
+          <div>
+            <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">🎙️ Record & Transcribe</label>
+            <div class="mt-2">
+              <button @click="toggleRecording()" 
+                      class="px-8 py-3 rounded-lg font-semibold transition-all shadow-lg"
+                      :class="recording ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-gradient-to-r from-indigo-500 to-sky-400 text-white hover:opacity-90'">
+                <span x-show="!recording">🎙️ Record</span>
+                <span x-show="recording">⏹️ Stop & Transcribe</span>
+              </button>
+              <div x-show="transcribing" class="mt-3 text-sm text-indigo-600 dark:text-indigo-400">
+                ⏳ Transcribing with Whisper AI...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback -->
+        <div id="feedbackBox" class="p-5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-sm">
+          <div x-html="renderedFeedback || 'Feedback will appear here after submission.'"></div>
+          <div class="mt-3 flex items-center justify-between">
+            <button @click="playFeedbackAudio()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700" x-show="feedbackAudioUrl">🔊 Play Feedback</button>
+            <span class="text-xs text-slate-400">Score: <strong x-text="lastScore !== null ? (Math.round(lastScore * 10) / 10) + '/10' : '—'"></strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== SIDEBAR ====== -->
+      <aside class="space-y-6 fade-slide-up" style="animation-delay: .2s">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 border border-slate-100 dark:border-slate-700">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">📊 Session Progress</h3>
+            <div class="text-sm text-indigo-600 dark:text-indigo-400"><span x-text="index+1"></span>/<span x-text="total"></span></div>
+          </div>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2">
+            <li>💡 Keep answers 30–90s for clarity.</li>
+            <li>💬 Use keywords from the question.</li>
+            <li>🚫 Avoid fillers like "um", "like".</li>
+          </ul>
+        </div>
+
+        <div class="bg-gradient-to-br from-indigo-50 to-white dark:from-slate-700 dark:to-slate-800 rounded-2xl shadow-lg p-6">
+          <h3 class="text-sm font-semibold text-sky-700 dark:text-sky-300 mb-3">🏆 Top Learners</h3>
+          <ul class="space-y-2 text-sm">
+            {% if top_learners %}
+              {% for learner in top_learners %}
+                <li class="flex justify-between">
+                  <span>{{ learner.name }}</span>
+                  <span class="font-semibold">{{ learner.avg }}</span>
+                </li>
+              {% endfor %}
+            {% else %}
+              <li class="text-slate-500 dark:text-slate-400 text-center py-2">No data yet</li>
+            {% endif %}
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <footer class="text-center text-sm text-white/80 py-6 mt-6 relative z-10">© {{ now().year if now else '2025' }} IntervYou — Practice. Improve. Succeed.</footer>
+
+  <!-- JS Logic -->
+  <script>
+    // small helper: ensure window.showToast exists; if not, create a fallback
+    (function(){
+      if (!window.showToast) {
+        window.showToast = function(msg, opts = {}) {
+          const id = 'iv-toast-fallback';
+          let container = document.getElementById(id);
+          if (!container) {
+            container = document.createElement('div');
+            container.id = id;
+            container.style.position = 'fixed';
+            container.style.right = '18px';
+            container.style.bottom = '18px';
+            container.style.zIndex = 99999;
+            document.body.appendChild(container);
+          }
+          const el = document.createElement('div');
+          el.style.marginTop = '8px';
+          el.style.minWidth = '160px';
+          el.style.background = 'rgba(15,23,42,0.95)';
+          el.style.color = 'white';
+          el.style.padding = '10px 12px';
+          el.style.borderRadius = '8px';
+          el.style.boxShadow = '0 6px 20px rgba(2,6,23,0.4)';
+          el.style.fontSize = '13px';
+          el.textContent = msg;
+          container.appendChild(el);
+          const lifetime = (opts.duration || 2500);
+          setTimeout(()=> {
+            try { container.removeChild(el); } catch(e){}
+          }, lifetime);
+        }
+      }
+    })();
+
+    function mockInterview(){
+      return {
+        dark:false,
+        timeLeft:60,
+        dashOffset:276,
+        progress:0,
+        index:0,
+        total:5,
+        question:'Loading...',
+        category:'',
+        answerText:'',
+        feedback:null,
+        renderedFeedback:null,
+        recording:false,
+        transcribing:false,
+        mediaRecorder:null,
+        recordingBlob:null,
+        lastRecordingUrl:null,
+        audioStream:null,
+        feedbackAudioUrl:null,
+        lastScore:null,
+        timer:null,
+
+        // optimistic-save state
+        questionSaved: false,
+        savingInProgress: false,
+
+        toggleTheme(){
+          this.dark=!this.dark;
+          localStorage.setItem('iv_theme',this.dark?'dark':'light');
+          document.documentElement.classList.toggle('dark',this.dark);
+        },
+
+        goHome(){ window.location.href = '/'; },
+
+        init(){
+          const saved=localStorage.getItem('iv_theme'); this.dark=saved==='dark'; document.documentElement.classList.toggle('dark',this.dark);
+          // get total from server-rendered context if available
+          try {
+            const totalEl = document.querySelector('[x-text="total"]');
+            // If server placed total via template, Alpine will bind; otherwise keep default
+          } catch(e){}
+          // load first question
+          this.loadQuestion();
+        },
+
+        async loadQuestion(){
+          try {
+            const res = await fetch(`/get_mock_question?index=${this.index}`);
+            if (!res.ok) throw new Error('Failed to fetch question');
+            const data = await res.json();
+            this.question = data.question || 'Error loading question';
+          } catch (e) {
+            console.warn('loadQuestion error', e);
+            this.question = "Explain a programming concept you're comfortable with.";
+          }
+          // reset UI for new question
+          this.answerText = '';
+          this.feedback = null;
+          this.renderedFeedback = null;
+          this.feedbackAudioUrl = null;
+          this.lastScore = null;
+          // reset saved state for new question
+          this.questionSaved = false;
+          this.savingInProgress = false;
+          this.restartTimer();
+        },
+
+        startTimer(){
+          try { clearInterval(this.timer); } catch(e){}
+          this.timeLeft = 60;
+          this.dashOffset = 276;
+          this.timer = setInterval(()=>{
+            this.timeLeft = Math.max(0, this.timeLeft - 1);
+            // update dash offset (circular progress)
+            this.dashOffset = Math.round(276 * (1 - this.timeLeft / 60));
+            // progress relative to session index
+            this.progress = Math.round(((this.index) / Math.max(1,this.total)) * 100);
+            if (this.timeLeft <= 0) {
+              clearInterval(this.timer);
+              // auto-submit if there's an answer
+              if (this.answerText && this.answerText.trim()) {
+                this.submitTextAnswer();
+              } else {
+                // move to next question when time up and nothing to submit
+                this.skipQuestion();
+              }
+            }
+          }, 1000);
+        },
+
+        restartTimer(){ try { clearInterval(this.timer); } catch(e){}; this.startTimer(); },
+
+        async submitTextAnswer(){
+          const msg = (this.answerText || '').trim();
+          if (!msg) { alert('Please type your answer.'); return; }
+
+          // stop timer while evaluating
+          try { clearInterval(this.timer); } catch(e){}
+
+          // Make robust call to /evaluate_answer for structured feedback + plagiarism
+          try {
+            const payload = {
+              question_text: this.question,
+              answer: msg
+            };
+            const res = await fetch('/evaluate_answer', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              // fallback: try /chat for a simpler response
+              console.warn('evaluate_answer failed, status', res.status);
+              const chatRes = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: msg})
+              });
+              const chatJson = await chatRes.json();
+              this._renderSimpleFeedback(chatJson);
+              return;
+            }
+
+            const json = await res.json();
+
+            // json: { evaluation: {...}, plagiarism_score: 0.xx, matches: [...] }
+            const evalObj = json.evaluation || {};
+            const plag_score = typeof json.plagiarism_score === 'number' ? json.plagiarism_score : null;
+            const matches = json.matches || [];
+
+            // store primary score if available
+            const scoreVal = (evalObj && (evalObj.score !== undefined && evalObj.score !== null)) ? evalObj.score : null;
+            this.lastScore = (scoreVal !== null) ? scoreVal : (typeof json.evaluation === 'string' ? null : null);
+
+            // build an HTML summary for display (keeps style clean)
+            let html = '';
+            if (evalObj.summary) {
+              html += `<div class="mb-2"><strong>Summary:</strong><div class="mt-1 text-sm text-slate-700 dark:text-slate-300">${escapeHtml(evalObj.summary)}</div></div>`;
+            }
+            if (Array.isArray(evalObj.improvements) && evalObj.improvements.length) {
+              html += `<div class="mb-2"><strong>Improvements:</strong><ul class="mt-1 text-sm text-slate-700 dark:text-slate-300">`;
+              for (const imp of evalObj.improvements) {
+                html += `<li style="margin-top:4px;">• ${escapeHtml(imp)}</li>`;
+              }
+              html += `</ul></div>`;
+            }
+            // grammar / fillers info if present
+            if (evalObj.grammar) {
+              html += `<div class="mb-2"><strong>Grammar notes:</strong><div class="mt-1 text-sm text-slate-700 dark:text-slate-300">${escapeHtml(evalObj.grammar)}</div></div>`;
+            }
+            if (evalObj.fillers) {
+              html += `<div class="mb-2"><strong>Filler words:</strong><div class="mt-1 text-sm text-slate-700 dark:text-slate-300">${escapeHtml(evalObj.fillers)}</div></div>`;
+            }
+
+            if (scoreVal !== null) {
+              const roundedScore = Math.round(scoreVal * 10) / 10;
+              html += `<div class="mb-2"><strong>Score:</strong> <span style="font-weight:700;">${roundedScore}/10</span></div>`;
+              this.lastScore = roundedScore;
+            }
+
+            // plagiarism
+            if (plag_score !== null) {
+              const pct = Math.round(plag_score * 100);
+              html += `<div class="mb-2"><strong>Similarity:</strong> ${pct}%</div>`;
+              if (matches && matches.length) {
+                html += `<div class="mb-2"><strong>Top matches:</strong><ul class="mt-1 text-sm text-slate-700 dark:text-slate-300">`;
+                for (const m of matches.slice(0,4)) {
+                  const excerpt = m.excerpt ? ` — ${escapeHtml(m.excerpt)}` : '';
+                  html += `<li style="margin-top:4px;">• ${escapeHtml(m.source || m.id || 'source')}: ${Math.round((m.sim || 0)*100)}%${excerpt}</li>`;
+                }
+                html += `</ul></div>`;
+              }
+            }
+
+            if (!html) {
+              html = `<div class="text-sm text-slate-700 dark:text-slate-300">No detailed evaluation returned.</div>`;
+            }
+
+            // store rendered HTML
+            this.renderedFeedback = html;
+            // keep plain object too if needed
+            this.feedback = evalObj;
+
+            // optionally, if LLM returned an audio_url for TTS feedback, set it
+            if (evalObj && evalObj.audio_url) {
+              this.feedbackAudioUrl = evalObj.audio_url;
+            }
+
+            // advance to next question after a small delay (optional)
+            setTimeout(()=>{
+              // move index forward if still less than total-1
+              if (this.index + 1 < this.total) {
+                this.index++;
+                this.loadQuestion();
+              } else {
+                // end of session: Keep showing feedback, reset timer
+                try { clearInterval(this.timer); } catch(e){}
+              }
+            }, 1200);
+
+          } catch (err) {
+            console.error('submitTextAnswer error', err);
+            // fallback to simple chat endpoint
+            try {
+              const chatRes = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: msg})
+              });
+              const chatJson = await chatRes.json();
+              this._renderSimpleFeedback(chatJson);
+            } catch(e){
+              this.renderedFeedback = `<div class="text-sm text-rose-500">Evaluation failed — try again later.</div>`;
+            }
+          }
+        },
+
+        _renderSimpleFeedback(chatJson){
+          // chat returns { reply: "...", score: n }
+          let html = '';
+          if (chatJson.reply) html += `<div class="mb-2">${escapeHtml(chatJson.reply)}</div>`;
+          if (chatJson.score !== undefined && chatJson.score !== null) {
+            const roundedScore = Math.round(chatJson.score * 10) / 10;
+            html += `<div><strong>Score:</strong> ${roundedScore}/10</div>`;
+            this.lastScore = roundedScore;
+          }
+          this.renderedFeedback = html || '<div class="text-sm">No feedback.</div>';
+        },
+
+        playFeedbackAudio(){ if(this.feedbackAudioUrl) new Audio(this.feedbackAudioUrl).play(); },
+
+        playQuestion(){ const u=new SpeechSynthesisUtterance(this.question); window.speechSynthesis.speak(u); },
+
+        // ---------- New: Save question (optimistic + toast) ----------
+        async saveQuestion(){
+          if (this.questionSaved || this.savingInProgress) return;
+
+          this.savingInProgress = true;
+          // optimistic UI
+          this.questionSaved = true;
+          window.showToast('Saving question…');
+
+          try {
+            const payload = { question: this.question };
+            const res = await fetch('/save_question', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              // rollback
+              this.questionSaved = false;
+              this.savingInProgress = false;
+              let txt = '';
+              try { txt = await res.text(); } catch(e){ txt = res.status; }
+              window.showToast('Save failed: ' + (txt || res.status), { duration: 3500 });
+              return;
+            }
+
+            const js = await res.json().catch(()=>null);
+            if (js && js.message) window.showToast(js.message);
+            else window.showToast('Saved!');
+            this.savingInProgress = false;
+            this.questionSaved = true;
+          } catch (err) {
+            console.error('saveQuestion error', err);
+            this.questionSaved = false;
+            this.savingInProgress = false;
+            window.showToast('Save failed (network).');
+          }
+        },
+
+        async toggleRecording(){
+          if(!this.recording){
+            // Start recording
+            try{
+              const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+              this.audioStream = stream;
+              this.mediaRecorder = new MediaRecorder(stream);
+              const chunks = [];
+              
+              this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
+              this.mediaRecorder.onstop = async () => {
+                this.recordingBlob = new Blob(chunks, {type:'audio/webm'});
+                // Auto-transcribe after stopping
+                await this.autoTranscribe();
+                // Stop all tracks
+                if(this.audioStream){
+                  this.audioStream.getTracks().forEach(track => track.stop());
+                }
+              };
+              
+              this.mediaRecorder.start();
+              this.recording = true;
+              window.showToast('🎙️ Recording...');
+            }catch(err){
+              window.showToast('Could not access microphone: ' + (err.message || err));
+              console.error('Recording error:', err);
+            }
+          }else{
+            // Stop recording and transcribe
+            if(this.mediaRecorder && this.mediaRecorder.state !== 'inactive'){
+              this.mediaRecorder.stop();
+              this.recording = false;
+            }
+          }
+        },
+
+        async autoTranscribe(){
+          if(!this.recordingBlob){
+            window.showToast('No recording to transcribe');
+            return;
+          }
+          
+          this.transcribing = true;
+          window.showToast('Transcribing with Whisper AI...');
+          
+          try{
+            const fd = new FormData();
+            fd.append('file', this.recordingBlob, 'answer.webm');
+            
+            const response = await fetch('/transcribe', {method:'POST', body:fd});
+            
+            if(!response.ok){
+              const errorText = await response.text();
+              throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const data = await response.json();
+            
+            if(data.error){
+              window.showToast(data.error);
+              return;
+            }
+            
+            if(data.transcription){
+              this.answerText = data.transcription;
+              window.showToast(`✅ Transcribed ${data.word_count || 0} words`);
+              this.renderedFeedback = `<div><strong>🎤 Transcription:</strong><div class="mt-2 p-3 bg-white dark:bg-slate-900 rounded-lg">${escapeHtml(data.transcription)}</div></div>`;
+            }else{
+              window.showToast('No speech detected');
+            }
+          }catch(err){
+            console.error('Transcription error:', err);
+            window.showToast('Transcription failed: ' + err.message);
+          }finally{
+            this.transcribing = false;
+          }
+        },
+
+        skipQuestion(){
+          // move to next question
+          this.index = (this.index + 1) % Math.max(1,this.total);
+          // reset saved state for next question
+          this.questionSaved = false;
+          this.savingInProgress = false;
+          this.loadQuestion();
+        }
+      }
+    }
+
+    // small helper to escape HTML in user-provided strings
+    function escapeHtml(s){
+      if (!s && s !== 0) return '';
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+  </script>
+</body>
+</html>

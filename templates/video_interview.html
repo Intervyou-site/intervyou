@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en" x-data="videoInterviewPage()" x-init="init()" :class="dark ? 'dark' : ''">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>🎥 Video Interview — IntervYou</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body{font-family:'Inter',sans-serif;}
+    [x-cloak]{display:none!important;}
+    @keyframes gradientMove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .animate-gradient{background-size:200% 200%;animation:gradientMove 12s ease infinite}
+    .fade-up{opacity:0;transform:translateY(30px);animation:fadeUp .8s ease forwards;}
+    @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .recording-indicator{animation:pulse 1.5s ease-in-out infinite;}
+    @keyframes shimmer{0%{background-position:-1000px 0}100%{background-position:1000px 0}}
+    .shimmer{background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);background-size:1000px 100%;animation:shimmer 2s infinite;}
+    .glass-effect{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2);}
+    .metric-card{transition:all 0.3s ease;transform-origin:center;}
+    .metric-card:hover{transform:scale(1.05);}
+    @keyframes slideIn{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .slide-in{animation:slideIn 0.5s ease forwards;}
+  </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased">
+
+  <!-- ====== TOP BAR ====== -->
+  <div class="fixed top-4 left-6 z-50 flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform" @click="goHome">
+    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-400 grid place-items-center text-white font-bold shadow-md">AI</div>
+    <span class="text-lg font-bold text-slate-800 dark:text-white">IntervYou</span>
+  </div>
+
+  <button 
+    @click="toggleTheme()" 
+    class="fixed top-4 right-6 z-50 p-2 rounded-full bg-white/20 dark:bg-slate-800 text-white hover:bg-white/30 transition">
+    <template x-if="!dark">🌙</template>
+    <template x-if="dark">☀️</template>
+  </button>
+
+  <!-- ====== HERO ====== -->
+  <header class="relative h-[35vh] flex items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-300 animate-gradient"></div>
+    <div class="absolute inset-0 bg-black/30"></div>
+    <div class="relative z-10 text-center text-white">
+      <h1 class="text-4xl font-extrabold mb-3">🎥 Video Interview</h1>
+      <p class="text-white/90 text-sm md:text-base">Answer interview questions using your camera and get AI-powered feedback.</p>
+    </div>
+  </header>
+
+  <!-- ====== MAIN ====== -->
+  <main class="max-w-6xl mx-auto px-6 -mt-10 pb-20">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- MAIN INTERVIEW AREA -->
+      <section class="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 fade-up">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-slate-800 dark:text-white">Interview Question</h2>
+          <span class="text-sm text-slate-500 dark:text-slate-400">AI-Powered Analysis</span>
+        </div>
+
+        <p class="text-base font-medium text-slate-700 dark:text-slate-200 mb-6 p-4 bg-indigo-50 dark:bg-slate-700 rounded-lg border-l-4 border-indigo-500">
+          {{ question or "Tell me about a challenging project you worked on and how you overcame obstacles." }}
+        </p>
+
+        <!-- Video Preview with Recording Indicator -->
+        <div class="relative bg-slate-900 rounded-xl overflow-hidden mb-6 shadow-lg">
+          <video id="preview" class="w-full h-[400px] object-cover bg-slate-800 rounded-lg" autoplay muted></video>
+          <div class="absolute inset-0 bg-black/20 pointer-events-none"></div>
+          
+          <!-- Recording Indicator -->
+          <div x-show="recording" class="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full recording-indicator">
+            <span class="w-3 h-3 bg-white rounded-full"></span>
+            <span class="font-semibold text-sm">REC</span>
+            <span x-text="recordingTime" class="text-sm"></span>
+          </div>
+          
+          <!-- Live Metrics (Real-time Analysis) -->
+          <div x-show="recording && realtimeEnabled" class="absolute top-4 right-4 bg-black/70 text-white px-4 py-3 rounded-lg text-xs space-y-1">
+            <div class="font-semibold mb-2">Live Metrics</div>
+            <div class="flex items-center gap-2">
+              <span>😊</span>
+              <span x-text="liveMetrics.emotion" class="capitalize"></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>👁️</span>
+              <span x-text="liveMetrics.eyeContact ? 'Good' : 'Look at camera'" :class="liveMetrics.eyeContact ? 'text-green-400' : 'text-yellow-400'"></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>🧘</span>
+              <span x-text="liveMetrics.posture" class="capitalize"></span>
+            </div>
+          </div>
+          
+          <!-- Live Alerts -->
+          <div x-show="liveMetrics.alerts.length > 0" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg">
+            <template x-for="alert in liveMetrics.alerts" :key="alert.message">
+              <div class="font-semibold text-sm" x-text="alert.message"></div>
+            </template>
+          </div>
+          
+          <!-- Processing Overlay -->
+          <div x-show="processing" class="absolute inset-0 bg-black/80 flex items-center justify-center">
+            <div class="text-center text-white">
+              <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p class="text-lg font-semibold">Analyzing your interview...</p>
+              <p class="text-sm text-white/70 mt-2">AI is processing video, emotions, and speech</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex flex-wrap gap-3 mb-6">
+          <button @click="startRecording" x-show="!recording && !videoBlob" 
+            class="px-6 py-3 rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold hover:opacity-90 transition shadow-lg">
+            🎬 Start Recording
+          </button>
+          <button @click="stopRecording" x-show="recording" 
+            class="px-6 py-3 rounded-lg bg-slate-700 text-white font-semibold hover:bg-slate-600 transition shadow-lg">
+            ⏹ Stop Recording
+          </button>
+          <button @click="retakeVideo" x-show="videoBlob && !processing" 
+            class="px-6 py-3 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition shadow-lg">
+            🔄 Retake
+          </button>
+          <button @click="uploadVideo" :disabled="!videoBlob || processing" x-show="videoBlob"
+            class="px-6 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-sky-400 text-white font-semibold hover:opacity-90 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!processing">🚀 Analyze Interview</span>
+            <span x-show="processing">⏳ Processing...</span>
+          </button>
+        </div>
+
+        <!-- Analysis Results -->
+        <div x-show="analysisComplete" class="space-y-4 slide-in">
+          <!-- Score Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="metric-card bg-gradient-to-br from-indigo-500 to-indigo-600 p-4 rounded-xl text-white shadow-lg">
+              <div class="text-2xl font-bold" x-text="detailedAnalysis?.confidence_score || '—'"></div>
+              <div class="text-xs opacity-90">Confidence</div>
+            </div>
+            <div class="metric-card bg-gradient-to-br from-sky-500 to-sky-600 p-4 rounded-xl text-white shadow-lg">
+              <div class="text-2xl font-bold" x-text="detailedAnalysis?.professionalism_score || '—'"></div>
+              <div class="text-xs opacity-90">Professionalism</div>
+            </div>
+            <div class="metric-card bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 rounded-xl text-white shadow-lg">
+              <div class="text-2xl font-bold" x-text="detailedAnalysis?.engagement_score || '—'"></div>
+              <div class="text-xs opacity-90">Engagement</div>
+            </div>
+            <div class="metric-card bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-xl text-white shadow-lg">
+              <div class="text-2xl font-bold" x-text="score || '—'"></div>
+              <div class="text-xs opacity-90">Overall Score</div>
+            </div>
+          </div>
+
+          <!-- Detailed Feedback -->
+          <div class="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
+            <h3 class="text-lg font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
+              <span>🤖</span> AI Analysis Report
+            </h3>
+            <pre x-text="feedback" class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed"></pre>
+          </div>
+
+          <!-- Enhanced Metrics Grid -->
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <!-- Eye Tracking -->
+            <div x-show="detailedAnalysis?.eye_tracking" class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow">
+              <h4 class="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                <span>👁️</span> Eye Tracking
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Eye Contact:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="(detailedAnalysis?.eye_tracking?.eye_contact_percentage || 0) + '%'"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Blink Rate:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="(detailedAnalysis?.eye_tracking?.blink_rate || 0).toFixed(1) + '/min'"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Gaze Stability:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="((detailedAnalysis?.eye_tracking?.gaze_stability || 0) * 100).toFixed(0) + '%'"></span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Voice Analysis -->
+            <div x-show="detailedAnalysis?.voice_analysis" class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow">
+              <h4 class="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                <span>🎤</span> Voice Analysis
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Speech Rate:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="(detailedAnalysis?.voice_analysis?.speech_rate || 0) + ' wpm'"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Clarity:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="((detailedAnalysis?.voice_analysis?.clarity_score || 0) * 100).toFixed(0) + '%'"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Filler Words:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="detailedAnalysis?.voice_analysis?.total_filler_count || 0"></span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Attention Metrics -->
+            <div x-show="detailedAnalysis?.attention_metrics" class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow">
+              <h4 class="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                <span>🎯</span> Attention & Focus
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Focus:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="(detailedAnalysis?.attention_metrics?.focus_percentage || 0) + '%'"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Distractions:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="detailedAnalysis?.attention_metrics?.distraction_count || 0"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Head Stability:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="((detailedAnalysis?.attention_metrics?.head_pose_stability || 0) * 100).toFixed(0) + '%'"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Emotion & Sentiment Analysis -->
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow">
+              <h4 class="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                <span>😊</span> Emotion Analysis
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Dominant Emotion:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white capitalize" x-text="detailedAnalysis?.emotions?.dominant_emotion || 'N/A'"></span>
+                </div>
+                <div x-show="detailedAnalysis?.authenticity_score" class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Authenticity:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="(detailedAnalysis?.authenticity_score || 0) + '/10'"></span>
+                </div>
+              </div>
+            </div>
+            
+            <div x-show="detailedAnalysis?.sentiment" class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow">
+              <h4 class="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                <span>💭</span> Sentiment Analysis
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Sentiment:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white capitalize" x-text="detailedAnalysis?.sentiment?.label || 'N/A'"></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600 dark:text-slate-400">Polarity:</span>
+                  <span class="font-semibold text-slate-800 dark:text-white" x-text="detailedAnalysis?.sentiment?.polarity || 'N/A'"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transcription -->
+          <div x-show="detailedAnalysis?.transcription" class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow">
+            <h4 class="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+              <span>📝</span> Transcription
+            </h4>
+            <p class="text-sm text-slate-600 dark:text-slate-400 italic" x-text="detailedAnalysis?.transcription"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SIDEBAR -->
+      <aside class="space-y-6 fade-up" style="animation-delay:.15s">
+        <!-- Pro Tips -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-100 dark:border-slate-700">
+          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+            <span>💡</span> Interview Tips
+          </h3>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-3">
+            <li class="flex items-start gap-2">
+              <span class="text-indigo-500">👁️</span>
+              <span>Look directly at the camera lens for eye contact</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-indigo-500">😊</span>
+              <span>Smile naturally and show positive emotions</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-indigo-500">🎤</span>
+              <span>Speak clearly with confidence and energy</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-indigo-500">⏱️</span>
+              <span>Keep answers between 45-90 seconds</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-indigo-500">🧘</span>
+              <span>Maintain steady posture and minimal fidgeting</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-indigo-500">💡</span>
+              <span>Use natural hand gestures to emphasize points</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Real-Time Analysis Toggle -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-slate-700 dark:to-slate-800 rounded-2xl p-6 shadow-lg border border-emerald-100 dark:border-slate-700">
+          <h4 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-4 flex items-center gap-2">
+            <span>⚡</span> Real-Time Analysis
+          </h4>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-slate-600 dark:text-slate-300">Live Feedback</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" x-model="realtimeEnabled" @change="localStorage.setItem('iv_realtime', realtimeEnabled)" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Get instant feedback on emotions, eye contact, and posture while recording
+          </p>
+        </div>
+        
+        <!-- AI Features -->
+        <div class="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-slate-700 dark:to-slate-800 rounded-2xl p-6 shadow-lg border border-purple-100 dark:border-slate-700">
+          <h4 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-4 flex items-center gap-2">
+            <span>🤖</span> AI Analysis Features
+          </h4>
+          <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>😊</span>
+              <span>Emotion & Micro-expressions</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>👁️</span>
+              <span>Advanced Eye Tracking</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>🎤</span>
+              <span>Voice & Speech Analysis</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>💭</span>
+              <span>Sentiment Analysis</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>📊</span>
+              <span>Confidence Scoring</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>🎯</span>
+              <span>Attention & Focus Tracking</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>🔍</span>
+              <span>Filler Word Detection</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+              <span>✨</span>
+              <span>Authenticity Analysis</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-gradient-to-br from-indigo-50 to-white dark:from-slate-700 dark:to-slate-800 rounded-2xl p-6 shadow-lg border border-indigo-100 dark:border-slate-700">
+          <h4 class="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-4 flex items-center gap-2">
+            <span>🎯</span> Quick Actions
+          </h4>
+          <div class="space-y-2">
+            <a href="/practice" class="block px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition text-center shadow">
+              📚 Practice Mode
+            </a>
+            <a href="/mock_interview" class="block px-4 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition text-center">
+              ⏱️ Mock Interview
+            </a>
+            <a href="/profile" class="block px-4 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition text-center">
+              📊 View Progress
+            </a>
+          </div>
+        </div>
+
+        <!-- Stats Card (if analysis complete) -->
+        <div x-show="analysisComplete" class="bg-gradient-to-br from-emerald-50 to-white dark:from-slate-700 dark:to-slate-800 rounded-2xl p-6 shadow-lg border border-emerald-100 dark:border-slate-700 slide-in">
+          <h4 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-4 flex items-center gap-2">
+            <span>🎉</span> Session Complete
+          </h4>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600 dark:text-slate-400">Your Score:</span>
+              <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-400" x-text="score"></span>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 text-center pt-2 border-t border-slate-200 dark:border-slate-600">
+              Keep practicing to improve!
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <footer class="text-center text-sm text-white/80 py-6">© {{ now().year if now else '2025' }} IntervYou</footer>
+
+  <script>
+    function videoInterviewPage(){
+      return {
+        dark:false, 
+        recording:false, 
+        processing:false,
+        analysisComplete:false,
+        mediaRecorder:null, 
+        videoBlob:null, 
+        feedback:'', 
+        score:null,
+        detailedAnalysis:null,
+        recordingTime:'00:00',
+        recordingInterval:null,
+        recordingStartTime:null,
+        stream:null,
+        
+        // Real-time analysis
+        realtimeEnabled:false,
+        websocket:null,
+        liveMetrics:{
+          emotion:'neutral',
+          eyeContact:false,
+          posture:'good',
+          alerts:[]
+        },
+        realtimeInterval:null,
+        
+        init(){
+          const s=localStorage.getItem('iv_theme');
+          this.dark=s==='dark';
+          document.documentElement.classList.toggle('dark',this.dark);
+          this.setupCamera();
+          
+          // Check if real-time analysis is enabled
+          const realtimePref=localStorage.getItem('iv_realtime');
+          this.realtimeEnabled=realtimePref==='true';
+        },
+        
+        toggleTheme(){
+          this.dark=!this.dark;
+          localStorage.setItem('iv_theme',this.dark?'dark':'light');
+          document.documentElement.classList.toggle('dark',this.dark);
+        },
+        
+        goHome(){ 
+          window.location.href='/'; 
+        },
+        
+        async setupCamera(){
+          try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ 
+              video: { width: 1280, height: 720 }, 
+              audio: true 
+            });
+            document.getElementById('preview').srcObject = this.stream;
+          } catch(err) {
+            alert('Camera access denied. Please allow camera and microphone access.');
+            console.error('Camera setup error:', err);
+          }
+        },
+        
+        startRecording(){
+          if(!this.stream) {
+            alert('Camera not ready. Please refresh the page.');
+            return;
+          }
+          
+          const chunks=[];
+          this.mediaRecorder = new MediaRecorder(this.stream, {
+            mimeType: 'video/webm;codecs=vp8,opus'
+          });
+          
+          this.mediaRecorder.ondataavailable = e => {
+            if(e.data.size > 0) chunks.push(e.data);
+          };
+          
+          this.mediaRecorder.onstop = () => {
+            this.videoBlob = new Blob(chunks, {type:'video/webm'});
+            clearInterval(this.recordingInterval);
+            this.stopRealtimeAnalysis();
+          };
+          
+          this.mediaRecorder.start();
+          this.recording = true;
+          this.analysisComplete = false;
+          this.recordingStartTime = Date.now();
+          
+          // Update recording timer
+          this.recordingInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            this.recordingTime = `${mins}:${secs}`;
+          }, 1000);
+          
+          // Start real-time analysis if enabled
+          if(this.realtimeEnabled) {
+            this.startRealtimeAnalysis();
+          }
+        },
+        
+        startRealtimeAnalysis(){
+          try {
+            // Connect to WebSocket
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/realtime_analysis`;
+            this.websocket = new WebSocket(wsUrl);
+            
+            this.websocket.onopen = () => {
+              console.log('Real-time analysis connected');
+              
+              // Send frames periodically
+              this.realtimeInterval = setInterval(() => {
+                if(this.recording && this.stream) {
+                  const video = document.getElementById('preview');
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 320;
+                  canvas.height = 240;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const frameData = canvas.toDataURL('image/jpeg', 0.7);
+                  
+                  this.websocket.send(JSON.stringify({
+                    type: 'frame',
+                    frame: frameData
+                  }));
+                }
+              }, 1000); // Send frame every second
+            };
+            
+            this.websocket.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              if(data.type === 'analysis') {
+                this.updateLiveMetrics(data.data);
+              }
+            };
+            
+            this.websocket.onerror = (error) => {
+              console.error('WebSocket error:', error);
+            };
+          } catch(err) {
+            console.error('Failed to start real-time analysis:', err);
+          }
+        },
+        
+        stopRealtimeAnalysis(){
+          if(this.realtimeInterval) {
+            clearInterval(this.realtimeInterval);
+            this.realtimeInterval = null;
+          }
+          
+          if(this.websocket) {
+            try {
+              this.websocket.send(JSON.stringify({type: 'end_session'}));
+              this.websocket.close();
+            } catch(e) {}
+            this.websocket = null;
+          }
+        },
+        
+        updateLiveMetrics(data){
+          if(data.metrics) {
+            this.liveMetrics.emotion = data.metrics.emotion?.dominant || 'neutral';
+            this.liveMetrics.eyeContact = data.metrics.gaze?.eye_contact || false;
+            this.liveMetrics.posture = data.metrics.posture?.good_posture ? 'good' : 'needs improvement';
+          }
+          
+          if(data.alerts && data.alerts.length > 0) {
+            this.liveMetrics.alerts = data.alerts;
+            // Auto-clear alerts after 3 seconds
+            setTimeout(() => {
+              this.liveMetrics.alerts = [];
+            }, 3000);
+          }
+        },
+        
+        stopRecording(){
+          if(this.mediaRecorder && this.recording){
+            this.mediaRecorder.stop();
+            this.recording = false;
+            clearInterval(this.recordingInterval);
+          }
+        },
+        
+        retakeVideo(){
+          this.videoBlob = null;
+          this.feedback = '';
+          this.score = null;
+          this.detailedAnalysis = null;
+          this.analysisComplete = false;
+          this.recordingTime = '00:00';
+        },
+        
+        async uploadVideo(){
+          if(!this.videoBlob) {
+            alert('No video recorded!');
+            return;
+          }
+          
+          this.processing = true;
+          this.analysisComplete = false;
+          
+          try {
+            const fd = new FormData();
+            fd.append('video', this.videoBlob, 'interview.webm');
+            fd.append('question', '{{ question or "" }}');
+            
+            const res = await fetch('/upload_video', {
+              method: 'POST',
+              body: fd
+            });
+            
+            if(!res.ok) {
+              throw new Error('Upload failed');
+            }
+            
+            const data = await res.json();
+            
+            if(data.success) {
+              this.feedback = data.feedback || 'Analysis complete!';
+              this.score = data.score ? Math.round(data.score * 10) / 10 : null;
+              this.detailedAnalysis = data.detailed_analysis || {};
+              this.analysisComplete = true;
+              
+              // Scroll to results
+              setTimeout(() => {
+                document.querySelector('.slide-in')?.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'nearest' 
+                });
+              }, 300);
+            } else {
+              throw new Error(data.error || 'Analysis failed');
+            }
+          } catch(err) {
+            console.error('Upload error:', err);
+            alert('Failed to analyze video. Please try again.');
+            this.feedback = 'Error: ' + err.message;
+          } finally {
+            this.processing = false;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

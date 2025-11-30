@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}IntervYou — Authentication{% endblock %}</title>
+
+  <!-- ===================== GLOBAL AUTH STYLES ===================== -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --text: #0a1635;
+      --muted: #6b7280;
+      --accent: #1e40af;
+      --accent-light: #3b82f6;
+      --shadow: 0 6px 24px rgba(12,15,30,0.08);
+      --radius: 14px;
+    }
+    [data-theme="dark"] {
+      --bg: #0b1220;
+      --card: #0f172a;
+      --text: #e6eef8;
+      --muted: #9aa6b2;
+      --accent: #3b82f6;
+      --accent-light: #60a5fa;
+      --shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background .3s ease, color .3s ease;
+    }
+
+    .auth-container {
+      width: 420px;
+      max-width: 94%;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      text-align: left;
+      transition: background .3s ease;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-light), var(--accent));
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.06);
+      margin-top: 6px;
+      font-size: 14px;
+      background: #f9fafb;
+      color: var(--text);
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      width: 100%;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: background .2s ease;
+    }
+    .btn:hover { background: var(--accent-light); }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    #themeToggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      padding: 6px 8px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: color .2s ease;
+    }
+    #themeToggle:hover { color: var(--accent); }
+  </style>
+</head>
+
+<body>
+  <button id="themeToggle">🌙</button>
+
+  <!-- Centered Card Content -->
+  <div class="auth-container">
+    {% block content %}
+    {% endblock %}
+  </div>
+
+  <!-- Theme Script -->
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    function setThemeIcon(theme){
+      themeToggle.textContent = theme === 'dark' ? '☀' : '🌙';
+    }
+    (function initTheme(){
+      const saved = localStorage.getItem('theme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      setThemeIcon(theme);
+    })();
+    themeToggle.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      setThemeIcon(next);
+    });
+  </script>
+</body>
+</html>

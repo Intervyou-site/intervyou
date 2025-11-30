@@ -1,0 +1,23 @@
+/* Debug styles for explore dropdown - Add this temporarily to test */
+
+/* Make dropdown always visible for testing */
+.explore-panel-debug {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+  background: rgba(255, 0, 0, 0.1) !important; /* Red tint to see it */
+  border: 2px solid red !important;
+}
+
+/* Add this class to explore-panel in HTML to test:
+   <div class="explore-panel explore-panel-debug">
+*/
+
+/* Or test with this - makes dropdown visible on page load */
+/* 
+.explore-panel {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+*/
