@@ -39,10 +39,10 @@ gtts>=2.5.0
 opencv-python>=4.8.0
 imageio-ffmpeg>=0.4.9
 
-# ---- Advanced Video Analysis (Required for Enhanced Features) ----
-fer>=22.5.0                    # Facial Emotion Recognition
-deepface>=0.0.79               # Advanced facial analysis & micro-expressions
-mediapipe>=0.10.0              # Body pose, face mesh, and eye tracking
+# ---- Advanced Video Analysis (Optional - Comment out for deployment) ----
+# fer>=22.5.0                    # Facial Emotion Recognition
+# deepface>=0.0.79               # Advanced facial analysis & micro-expressions
+# mediapipe>=0.10.0              # Body pose, face mesh, and eye tracking
 SpeechRecognition>=3.10.0      # Audio transcription and filler word detection
 scipy>=1.11.0                  # Signal processing for voice analysis
 websockets>=12.0               # Real-time analysis support
