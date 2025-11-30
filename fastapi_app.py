@@ -89,7 +89,12 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.units import inch
 from gtts import gTTS
 from textblob import TextBlob
-import language_tool_python
+try:
+    import language_tool_python
+    LANGUAGE_TOOL_AVAILABLE = True
+except ImportError:
+    LANGUAGE_TOOL_AVAILABLE = False
+    print("⚠️  language_tool_python not available (grammar checking disabled)")
 import librosa
 import numpy as np
 
@@ -120,8 +125,16 @@ except Exception:
 
 
 
-import language_tool_python
-tool = language_tool_python.LanguageTool('en-US')
+# Initialize language tool if available
+try:
+    if LANGUAGE_TOOL_AVAILABLE:
+        import language_tool_python
+        tool = language_tool_python.LanguageTool('en-US')
+    else:
+        tool = None
+except Exception:
+    tool = None
+    LANGUAGE_TOOL_AVAILABLE = False
 
 # ---------------------------
 # Config
