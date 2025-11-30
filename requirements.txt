@@ -47,11 +47,11 @@ SpeechRecognition>=3.10.0      # Audio transcription and filler word detection
 scipy>=1.11.0                  # Signal processing for voice analysis
 websockets>=12.0               # Real-time analysis support
 
-# ---- AI & ML helpers ----
-transformers>=4.44.0
-sentence-transformers>=3.0.1
-torch>=2.4.0
-torchaudio>=2.4.0
+# ---- AI & ML helpers (Optional - Heavy packages) ----
+# transformers>=4.44.0
+# sentence-transformers>=3.0.1
+# torch>=2.4.0
+# torchaudio>=2.4.0
 scikit-learn>=1.5.1
 textblob>=0.18.0
 
