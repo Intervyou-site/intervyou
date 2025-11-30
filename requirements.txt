@@ -58,8 +58,8 @@ textblob>=0.18.0
 # ---- PDF Generation ----
 reportlab>=4.2.0
 
-# ---- Language Tools ----
-language-tool-python>=2.8.0
+# ---- Language Tools (Requires Java - disabled for deployment) ----
+# language-tool-python>=2.8.0
 
 # ---- Validation ----
 pydantic>=2.8.2
