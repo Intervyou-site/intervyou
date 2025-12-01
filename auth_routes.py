@@ -68,7 +68,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         
         if not user:
             # Create new user with OAuth
-            random_password = os.urandom(32).hex()  # Random password for OAuth users
+            # Use a shorter random password (bcrypt has 72 byte limit)
+            random_password = os.urandom(16).hex()[:50]  # Max 50 chars to be safe
             user = User(
                 name=name,
                 email=email,
