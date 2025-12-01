@@ -11,18 +11,22 @@ from pathlib import Path
 from typing import Union
 from fastapi import UploadFile
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use Argon2 only (more modern, no bcrypt compatibility issues)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a plaintext password (bcrypt)."""
-    return pwd_context.hash(password)
+    """Hash a plaintext password using Argon2."""
+    # Truncate to 72 bytes to be safe (though Argon2 doesn't have this limit)
+    safe_password = password[:72] if len(password) > 72 else password
+    return pwd_context.hash(safe_password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plaintext password against a bcrypt hash."""
+    """Verify a plaintext password against an Argon2 hash."""
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        safe_password = plain_password[:72] if len(plain_password) > 72 else plain_password
+        return pwd_context.verify(safe_password, hashed_password)
     except Exception:
         return False
 
