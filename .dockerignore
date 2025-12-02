@@ -9,7 +9,7 @@ venv/
 env/
 ENV/
 
-# Environment
+# Environment files (will be passed via docker-compose)
 .env
 .env.local
 .env.*.local
@@ -31,13 +31,9 @@ backup/
 .DS_Store
 Thumbs.db
 
-# Uploads
-uploads/*
-!uploads/.gitkeep
-static/uploads/*
-!static/uploads/.gitkeep
-static/audio/*
-!static/audio/.gitkeep
+# Git
+.git/
+.gitignore
 
 # Logs
 *.log
@@ -56,14 +52,16 @@ dist/
 build/
 *.egg-info/
 
-# Alembic
-alembic/versions/*.pyc
-
 # Temporary
 *.tmp
 *.bak
 swark-output/
 
+# Documentation
+*.md
+!README.md
+
 # Docker
-docker-compose.override.yml
-ssl/
+Dockerfile
+docker-compose.yml
+.dockerignore
