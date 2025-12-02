@@ -3,60 +3,65 @@
 ## Problem
 Your Docker container can't connect to Supabase database due to IPv6 network issue.
 
-## Solution
+## ✅ SOLUTION: Use Local PostgreSQL Database
 
-### Step 1: Restart with New Configuration
+I've added a local PostgreSQL database to your Docker setup!
 
-Open PowerShell in project directory and run:
+### Run This Command:
 
 ```powershell
-.\restart-app.ps1
+.\start-with-local-db.ps1
 ```
 
 This will:
-1. Stop the current container
-2. Start with new DNS settings (Google DNS 8.8.8.8)
-3. Wait 30 seconds
-4. Show you the logs
+1. ✅ Stop existing containers
+2. ✅ Start PostgreSQL database (local)
+3. ✅ Start IntervYou app
+4. ✅ Initialize database tables
+5. ✅ Open your browser automatically
 
-### Step 2: Check if It's Working
+### What Changed:
 
-After 30 seconds, open browser:
+- Added PostgreSQL 15 container to docker-compose.yml
+- Database runs locally (no internet needed)
+- Data persists in Docker volume
+- Automatic health checks
+
+---
+
+## Access Your App
+
+After running the script, open:
 ```
 http://localhost:8000
 ```
 
-### Step 3: View Logs (if needed)
+---
 
+## Database Info
+
+**Local PostgreSQL:**
+- Host: localhost:5432
+- Database: intervyou
+- User: intervyou
+- Password: intervyou123
+
+**Connect with psql:**
 ```powershell
-.\view-logs.ps1
+docker exec -it intervyou-db psql -U intervyou
 ```
-
-Look for:
-- ✅ "Uvicorn running on http://0.0.0.0:8000" = GOOD
-- ❌ "Network is unreachable" = Still has issues
 
 ---
 
-## Alternative: Use Local Database
+## Still Want to Use Supabase?
 
-If Supabase connection keeps failing, you can use a local PostgreSQL:
+If you want to use Supabase instead of local database:
 
-### Option A: Add PostgreSQL to Docker Compose
+1. Edit `docker-compose.yml`
+2. Change the DATABASE_URL back to Supabase
+3. Restart: `.\restart-app.ps1`
 
-I can add a PostgreSQL container to your docker-compose.yml
-
-### Option B: Use SQLite for Testing
-
-Edit `.env`:
-```env
-DATABASE_URL=sqlite:///./database.db
-```
-
-Then restart:
-```powershell
-.\restart-app.ps1
-```
+But for local development, the local database is faster and more reliable!
 
 ---
 
