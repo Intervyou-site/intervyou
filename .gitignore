@@ -42,6 +42,9 @@ static/audio/*
 # Logs
 *.log
 logs/
+app-logs/
+app-logs-new/
+*.zip
 
 # Testing
 .pytest_cache/
