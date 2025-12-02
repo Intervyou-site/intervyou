@@ -47,6 +47,7 @@
             <input id="password" type="password" name="password" required placeholder=" " autocomplete="current-password">
             <label for="password">Password</label>
             <box-icon name='lock-alt' type='solid'></box-icon>
+            <box-icon name='hide' type='solid' class='toggle-password' id='toggleLoginPassword' style='position:absolute;right:15px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999;'></box-icon>
           </div>
 
           <div class="input-box" style="margin-top:20px;">
@@ -92,25 +93,69 @@
         <h2>Register</h2>
         <form action="/register" method="post" novalidate>
           <div class="input-box">
-            <input id="reg_name" type="text" name="name" required placeholder=" ">
+            <input id="reg_name" type="text" name="name" required placeholder=" " minlength="2">
             <label for="reg_name">Username</label>
             <box-icon type='solid' name='user'></box-icon>
           </div>
+          <div class="error-message" id="reg_name_error" style="color:#ff4444;font-size:12px;margin-top:5px;display:none;"></div>
 
           <div class="input-box">
             <input id="reg_email" type="email" name="email" required placeholder=" ">
             <label for="reg_email">Email</label>
             <box-icon name='envelope' type='solid'></box-icon>
           </div>
+          <div class="error-message" id="reg_email_error" style="color:#ff4444;font-size:12px;margin-top:5px;display:none;"></div>
 
           <div class="input-box">
-            <input id="reg_password" type="password" name="password" required placeholder=" ">
+            <input id="reg_password" type="password" name="password" required placeholder=" " autocomplete="new-password">
             <label for="reg_password">Password</label>
             <box-icon name='lock-alt' type='solid'></box-icon>
+            <box-icon name='hide' type='solid' class='toggle-password' id='toggleRegPassword' style='position:absolute;right:15px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999;'></box-icon>
+          </div>
+          <div class="error-message" id="reg_password_error" style="color:#ff4444;font-size:12px;margin-top:5px;display:none;"></div>
+          
+          <!-- Password Strength Meter -->
+          <div id="passwordStrength" style="margin-top:10px;display:none;">
+            <div style="height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;margin-bottom:8px;">
+              <div id="strengthBar" style="height:100%;width:0%;transition:all 0.3s;border-radius:2px;"></div>
+            </div>
+            <div id="strengthText" style="font-size:12px;color:#6b7280;"></div>
           </div>
 
+          <!-- Password Requirements -->
+          <div id="passwordRequirements" style="margin-top:10px;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;font-size:12px;display:none;">
+            <div class="requirement" id="req_length" style="display:flex;align-items:center;margin-bottom:6px;color:rgba(255,255,255,0.6);">
+              <box-icon name='x-circle' size='16px' style='margin-right:8px;'></box-icon>
+              <span>At least 8 characters</span>
+            </div>
+            <div class="requirement" id="req_uppercase" style="display:flex;align-items:center;margin-bottom:6px;color:rgba(255,255,255,0.6);">
+              <box-icon name='x-circle' size='16px' style='margin-right:8px;'></box-icon>
+              <span>One uppercase letter</span>
+            </div>
+            <div class="requirement" id="req_lowercase" style="display:flex;align-items:center;margin-bottom:6px;color:rgba(255,255,255,0.6);">
+              <box-icon name='x-circle' size='16px' style='margin-right:8px;'></box-icon>
+              <span>One lowercase letter</span>
+            </div>
+            <div class="requirement" id="req_number" style="display:flex;align-items:center;margin-bottom:6px;color:rgba(255,255,255,0.6);">
+              <box-icon name='x-circle' size='16px' style='margin-right:8px;'></box-icon>
+              <span>One number</span>
+            </div>
+            <div class="requirement" id="req_special" style="display:flex;align-items:center;color:rgba(255,255,255,0.6);">
+              <box-icon name='x-circle' size='16px' style='margin-right:8px;'></box-icon>
+              <span>One special character (!@#$%^&*)</span>
+            </div>
+          </div>
+
+          <div class="input-box">
+            <input id="reg_confirm_password" type="password" name="confirm_password" required placeholder=" " autocomplete="new-password">
+            <label for="reg_confirm_password">Confirm Password</label>
+            <box-icon name='lock-alt' type='solid'></box-icon>
+            <box-icon name='hide' type='solid' class='toggle-password' id='toggleConfirmPassword' style='position:absolute;right:15px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999;'></box-icon>
+          </div>
+          <div class="error-message" id="reg_confirm_password_error" style="color:#ff4444;font-size:12px;margin-top:5px;display:none;"></div>
+
           <div class="input-box" style="margin-top:20px;">
-            <button class="btn" type="submit">Register</button>
+            <button class="btn" type="submit" id="registerBtn">Register</button>
           </div>
 
           <!-- Social Login Buttons -->
@@ -165,9 +210,163 @@
     });
   </script>
 
-  <!-- Mobile Login Enhancement -->
+  <!-- Password Toggle & Validation -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Password visibility toggle
+      function setupPasswordToggle(toggleId, inputId) {
+        const toggle = document.getElementById(toggleId);
+        const input = document.getElementById(inputId);
+        
+        if (toggle && input) {
+          toggle.addEventListener('click', function() {
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+            this.setAttribute('name', type === 'password' ? 'hide' : 'show');
+          });
+        }
+      }
+
+      setupPasswordToggle('toggleLoginPassword', 'password');
+      setupPasswordToggle('toggleRegPassword', 'reg_password');
+      setupPasswordToggle('toggleConfirmPassword', 'reg_confirm_password');
+
+      // Password strength checker
+      const regPassword = document.getElementById('reg_password');
+      const passwordStrength = document.getElementById('passwordStrength');
+      const passwordRequirements = document.getElementById('passwordRequirements');
+      const strengthBar = document.getElementById('strengthBar');
+      const strengthText = document.getElementById('strengthText');
+
+      const requirements = {
+        length: { regex: /.{8,}/, element: document.getElementById('req_length') },
+        uppercase: { regex: /[A-Z]/, element: document.getElementById('req_uppercase') },
+        lowercase: { regex: /[a-z]/, element: document.getElementById('req_lowercase') },
+        number: { regex: /[0-9]/, element: document.getElementById('req_number') },
+        special: { regex: /[!@#$%^&*(),.?":{}|<>]/, element: document.getElementById('req_special') }
+      };
+
+      if (regPassword) {
+        regPassword.addEventListener('focus', function() {
+          passwordRequirements.style.display = 'block';
+        });
+
+        regPassword.addEventListener('input', function() {
+          const password = this.value;
+          let metCount = 0;
+
+          if (password.length > 0) {
+            passwordStrength.style.display = 'block';
+          } else {
+            passwordStrength.style.display = 'none';
+            passwordRequirements.style.display = 'none';
+            return;
+          }
+
+          // Check each requirement
+          Object.keys(requirements).forEach(key => {
+            const req = requirements[key];
+            const met = req.regex.test(password);
+            
+            if (met) {
+              req.element.style.color = '#10b981';
+              req.element.querySelector('box-icon').setAttribute('name', 'check-circle');
+              metCount++;
+            } else {
+              req.element.style.color = 'rgba(255,255,255,0.6)';
+              req.element.querySelector('box-icon').setAttribute('name', 'x-circle');
+            }
+          });
+
+          // Update strength bar
+          strengthBar.style.width = '0%';
+          if (metCount <= 2) {
+            strengthBar.style.width = '33%';
+            strengthBar.style.background = '#ef4444';
+            strengthText.textContent = 'Weak password';
+            strengthText.style.color = '#ef4444';
+          } else if (metCount <= 4) {
+            strengthBar.style.width = '66%';
+            strengthBar.style.background = '#f59e0b';
+            strengthText.textContent = 'Medium password';
+            strengthText.style.color = '#f59e0b';
+          } else {
+            strengthBar.style.width = '100%';
+            strengthBar.style.background = '#10b981';
+            strengthText.textContent = 'Strong password';
+            strengthText.style.color = '#10b981';
+          }
+        });
+      }
+
+      // Form validation
+      const registerForm = document.querySelector('.form-box.Register form');
+      if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+          let isValid = true;
+          const name = document.getElementById('reg_name');
+          const email = document.getElementById('reg_email');
+          const password = document.getElementById('reg_password');
+          const confirmPassword = document.getElementById('reg_confirm_password');
+
+          // Clear previous errors
+          document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+
+          // Validate name
+          if (!name.value.trim() || name.value.trim().length < 2) {
+            document.getElementById('reg_name_error') && (document.getElementById('reg_name_error').textContent = 'Name must be at least 2 characters');
+            isValid = false;
+          }
+
+          // Validate email
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email.value)) {
+            document.getElementById('reg_email_error') && (document.getElementById('reg_email_error').textContent = 'Please enter a valid email');
+            isValid = false;
+          }
+
+          // Validate password strength
+          let passwordValid = true;
+          Object.keys(requirements).forEach(key => {
+            if (!requirements[key].regex.test(password.value)) {
+              passwordValid = false;
+            }
+          });
+
+          if (!passwordValid) {
+            const errorEl = document.getElementById('reg_password_error');
+            if (errorEl) {
+              errorEl.textContent = 'Password does not meet all requirements';
+              errorEl.style.display = 'block';
+            }
+            isValid = false;
+          }
+
+          // Validate password confirmation
+          if (password.value !== confirmPassword.value) {
+            const errorEl = document.getElementById('reg_confirm_password_error');
+            if (errorEl) {
+              errorEl.textContent = 'Passwords do not match';
+              errorEl.style.display = 'block';
+            }
+            isValid = false;
+          }
+
+          if (!isValid) {
+            e.preventDefault();
+            return false;
+          }
+
+          // Show loading state
+          const btn = document.getElementById('registerBtn');
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+          }
+        });
+      }
+
+      // Mobile Login Enhancement
       const form = document.getElementById('loginForm');
       const btn = document.getElementById('loginBtn');
       const emailInput = document.getElementById('email');

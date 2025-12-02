@@ -933,7 +933,7 @@ def register_post(request: Request,
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     flashes = pop_flashes(request)
-    return templates.TemplateResponse("login_enhanced.html", {"request": request, "flashes": flashes})
+    return templates.TemplateResponse("login.html", {"request": request, "flashes": flashes})
 
 @app.get("/login_test", response_class=HTMLResponse)
 def login_test_get(request: Request):
