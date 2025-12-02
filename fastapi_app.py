@@ -853,24 +853,78 @@ def home(request: Request, db=Depends(get_db)):
 def register_get(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password strength with comprehensive checks.
+    Returns (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number"
+    
+    if not any(c in "!@#$%^&*(),.?\":{}|<>" for c in password):
+        return False, "Password must contain at least one special character (!@#$%^&*)"
+    
+    return True, ""
+
+
 @app.post("/register")
 def register_post(request: Request,
                   name: str = Form(...),
                   email: str = Form(...),
                   password: str = Form(...),
+                  confirm_password: str = Form(None),
                   db=Depends(get_db)):
     name = name.strip()
     email = email.strip().lower()
+    
+    # Validate all fields
     if not name or not email or not password:
         add_flash(request, "Please fill all fields", "danger")
-        return RedirectResponse("/register", status_code=303)
+        return RedirectResponse("/login", status_code=303)
+    
+    # Validate name length
+    if len(name) < 2:
+        add_flash(request, "Name must be at least 2 characters long", "danger")
+        return RedirectResponse("/login", status_code=303)
+    
+    # Validate email format
+    import re
+    email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    if not re.match(email_regex, email):
+        add_flash(request, "Please enter a valid email address", "danger")
+        return RedirectResponse("/login", status_code=303)
+    
+    # Check if email already exists
     if db.query(User).filter_by(email=email).first():
-        add_flash(request, "Email already registered!", "danger")
-        return RedirectResponse("/register", status_code=303)
+        add_flash(request, "Email already registered! Please login instead.", "danger")
+        return RedirectResponse("/login", status_code=303)
+    
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(password)
+    if not is_valid:
+        add_flash(request, error_msg, "danger")
+        return RedirectResponse("/login", status_code=303)
+    
+    # Validate password confirmation if provided
+    if confirm_password and password != confirm_password:
+        add_flash(request, "Passwords do not match", "danger")
+        return RedirectResponse("/login", status_code=303)
+    
+    # Create new user
     hashed = get_password_hash(password)
     new_user = User(name=name, email=email, password=hashed)
     db.add(new_user)
     db.commit()
+    
     add_flash(request, "Registration successful! Please log in.", "success")
     return RedirectResponse("/login", status_code=303)
 
@@ -879,7 +933,7 @@ def register_post(request: Request,
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     flashes = pop_flashes(request)
-    return templates.TemplateResponse("login.html", {"request": request, "flashes": flashes})
+    return templates.TemplateResponse("login_enhanced.html", {"request": request, "flashes": flashes})
 
 @app.get("/login_test", response_class=HTMLResponse)
 def login_test_get(request: Request):
