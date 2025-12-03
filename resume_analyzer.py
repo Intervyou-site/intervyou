@@ -344,7 +344,7 @@ CERTIFICATIONS
 {user_data.get('certifications', '• [Certification Name] - [Issuing Organization], [Year]')}
 
 TECHNICAL SKILLS
-{user_data.get('technical_skills', '• Programming: [Languages]\n• Frameworks: [Frameworks]\n• Tools: [Tools]\n• Databases: [Databases]')}
+{user_data.get('technical_skills', '• Programming: [Languages]' + chr(10) + '• Frameworks: [Frameworks]' + chr(10) + '• Tools: [Tools]' + chr(10) + '• Databases: [Databases]')}
 
 PROJECTS (Optional)
 {user_data.get('project1', '[Project Name]')} | {user_data.get('project_tech1', '[Technologies Used]')}
