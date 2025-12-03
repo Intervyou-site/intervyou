@@ -8,32 +8,12 @@ import secrets
 import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import Session
 from fastapi import HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
-from fastapi_app import Base, get_db, User
 
 # Security header for API key authentication
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-
-class APIKey(Base):
-    """Model for storing user API keys"""
-    __tablename__ = "api_keys"
-    
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    key_name = Column(String(100), nullable=False)  # User-friendly name
-    key_hash = Column(String(128), nullable=False, unique=True)  # Hashed API key
-    key_prefix = Column(String(10), nullable=False)  # First 8 chars for identification
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_used = Column(DateTime, nullable=True)
-    expires_at = Column(DateTime, nullable=True)  # Optional expiration
-    
-    # Relationship
-    user = relationship("User", backref="api_keys")
 
 
 def generate_api_key() -> tuple[str, str, str]:
@@ -59,11 +39,14 @@ def create_api_key(
     user_id: int,
     key_name: str,
     expires_in_days: Optional[int] = None
-) -> tuple[APIKey, str]:
+):
     """
     Create a new API key for a user
     Returns: (APIKey object, plain_key_string)
     """
+    # Import here to avoid circular dependency
+    from fastapi_app import APIKey
+    
     full_key, key_hash, key_prefix = generate_api_key()
     
     expires_at = None
@@ -85,11 +68,14 @@ def create_api_key(
     return api_key, full_key
 
 
-def verify_api_key(api_key_string: str, db: Session) -> Optional[User]:
+def verify_api_key(api_key_string: str, db: Session):
     """
     Verify an API key and return the associated user
     Returns None if invalid
     """
+    # Import here to avoid circular dependency
+    from fastapi_app import APIKey, User
+    
     if not api_key_string or not api_key_string.startswith("iv_"):
         return None
     
@@ -119,26 +105,40 @@ def verify_api_key(api_key_string: str, db: Session) -> Optional[User]:
 
 def get_current_user_from_api_key(
     api_key: str = Security(api_key_header),
-    db: Session = Depends(get_db)
-) -> User:
+    db: Session = Depends(lambda: None)  # Will be overridden in routes
+):
     """
     FastAPI dependency to get current user from API key
     Use this in your protected endpoints
+    Note: db dependency will be injected by FastAPI
     """
-    if not api_key:
-        raise HTTPException(
-            status_code=401,
-            detail="API key required. Include 'X-API-Key' header."
-        )
+    # Import get_db here to avoid circular import
+    from fastapi_app import get_db
     
-    user = verify_api_key(api_key, db)
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired API key"
-        )
+    # Get db session
+    db_gen = get_db()
+    db_session = next(db_gen)
     
-    return user
+    try:
+        if not api_key:
+            raise HTTPException(
+                status_code=401,
+                detail="API key required. Include 'X-API-Key' header."
+            )
+        
+        user = verify_api_key(api_key, db_session)
+        if not user:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or expired API key"
+            )
+        
+        return user
+    finally:
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
 
 
 def revoke_api_key(db: Session, key_id: int, user_id: int) -> bool:
@@ -146,6 +146,8 @@ def revoke_api_key(db: Session, key_id: int, user_id: int) -> bool:
     Revoke (deactivate) an API key
     Returns True if successful
     """
+    from fastapi_app import APIKey
+    
     api_key = db.query(APIKey).filter(
         APIKey.id == key_id,
         APIKey.user_id == user_id
@@ -163,6 +165,8 @@ def list_user_api_keys(db: Session, user_id: int) -> list[dict]:
     """
     List all API keys for a user (without exposing full keys)
     """
+    from fastapi_app import APIKey
+    
     keys = db.query(APIKey).filter(APIKey.user_id == user_id).all()
     
     return [
