@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en" x-data="resumeApp()" x-init="init()" :class="dark ? 'theme-dark' : ''">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>📄 Resume Builder — IntervYou</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="apple-touch-icon" href="/static/icons/icon-152x152.png">
+  <script src="/static/pwa-install.js" defer></script>
+  
+  <!-- Tailwind + Alpine -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak]{display:none!important;}
+    
+    @keyframes gradientMove {
+      0%,100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .animate-gradient {
+      background-size: 200% 200%;
+      animation: gradientMove 12s ease infinite;
+    }
+    
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      transition: all 0.3s;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #0ea5e9;
+      background-color: #f0f9ff;
+    }
+    .dark .upload-zone {
+      border-color: #475569;
+    }
+    .dark .upload-zone:hover, .dark .upload-zone.drag-over {
+      border-color: #0ea5e9;
+      background-color: #1e293b;
+    }
+    
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      position: relative;
+    }
+    
+    .feedback-critical { border-left: 4px solid #ef4444; }
+    .feedback-warning { border-left: 4px solid #f59e0b; }
+    .feedback-info { border-left: 4px solid #3b82f6; }
+    .feedback-success { border-left: 4px solid #10b981; }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-slate-900 antialiased dark:bg-slate-900 dark:text-slate-100">
+
+  <!-- Hover trigger area for navbar -->
+  <div class="nav-hover-trigger"></div>
+  
+  <!-- Expanding Menu Navigation -->
+  <div class="expanding-menu-container">
+    <nav class="expanding-menu" role="navigation">
+      <a href="/" class="menu-link">
+        <span class="menu-link-icon">home</span>
+        <span class="menu-link-title">Home</span>
+      </a>
+      
+      <div class="menu-link explore-dropdown">
+        <span class="menu-link-icon">explore</span>
+        <span class="menu-link-title">Explore</span>
+        
+        <div class="explore-panel">
+          <a href="/practice" class="explore-item">
+            <span class="material-symbols-rounded">psychology</span>
+            <span>Practice</span>
+          </a>
+          <a href="/mock_interview" class="explore-item">
+            <span class="material-symbols-rounded">school</span>
+            <span>Mock Interview</span>
+          </a>
+          <a href="/video_interview" class="explore-item">
+            <span class="material-symbols-rounded">videocam</span>
+            <span>Video Interview</span>
+          </a>
+          <a href="/report" class="explore-item">
+            <span class="material-symbols-rounded">analytics</span>
+            <span>Report</span>
+          </a>
+          <a href="/leaderboard" class="explore-item">
+            <span class="material-symbols-rounded">leaderboard</span>
+            <span>Leaderboard</span>
+          </a>
+          <a href="/advisor" class="explore-item">
+            <span class="material-symbols-rounded">support_agent</span>
+            <span>Advisor</span>
+          </a>
+          <a href="/resume" class="explore-item">
+            <span class="material-symbols-rounded">description</span>
+            <span>Resume Analyzer</span>
+          </a>
+          <a href="/saved" class="explore-item">
+            <span class="material-symbols-rounded">bookmark</span>
+            <span>Saved</span>
+          </a>
+        </div>
+      </div>
+      
+      <a href="/profile" class="menu-link">
+        <span class="menu-link-icon">account_circle</span>
+        <span class="menu-link-title">Profile</span>
+      </a>
+      
+      <button @click="toggleTheme()" class="menu-link" type="button">
+        <span class="menu-link-icon" x-text="dark ? 'dark_mode' : 'light_mode'">light_mode</span>
+        <span class="menu-link-title" x-text="dark ? 'Dark' : 'Light'">Light</span>
+      </button>
+      
+      <a href="/logout" class="menu-link">
+        <span class="menu-link-icon">logout</span>
+        <span class="menu-link-title">Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 py-8" x-data="resumeApp()">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold mb-2">📄 Resume Analyzer & Generator</h1>
+      <p class="text-slate-600 dark:text-slate-400">Get AI-powered feedback on your resume or generate an MNC-standard CV</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex justify-center mb-8 gap-4">
+      <button @click="activeTab = 'analyze'" 
+              :class="activeTab === 'analyze' ? 'bg-sky-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+              class="px-6 py-3 rounded-lg font-semibold shadow hover:scale-105 transition">
+        🔍 Analyze Resume
+      </button>
+      <button @click="activeTab = 'generate'" 
+              :class="activeTab === 'generate' ? 'bg-sky-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+              class="px-6 py-3 rounded-lg font-semibold shadow hover:scale-105 transition">
+        ✨ Generate Resume
+      </button>
+    </div>
+
+    <!-- Analyze Tab -->
+    <div x-show="activeTab === 'analyze'" x-cloak>
+      
+      <!-- Upload Section -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 mb-6">
+        <h2 class="text-2xl font-bold mb-4">Upload Your Resume</h2>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">Upload your resume in PDF, DOCX, or TXT format for instant analysis</p>
+        
+        <div class="upload-zone rounded-lg p-12 text-center cursor-pointer"
+             @click="$refs.fileInput.click()"
+             @dragover.prevent="dragOver = true"
+             @dragleave.prevent="dragOver = false"
+             @drop.prevent="handleDrop($event)"
+             :class="{'drag-over': dragOver}">
+          
+          <div x-show="!selectedFile">
+            <svg class="mx-auto h-16 w-16 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-lg font-semibold mb-2">Drop your resume here or click to browse</p>
+            <p class="text-sm text-slate-500">Supports PDF, DOCX, TXT (Max 5MB)</p>
+          </div>
+          
+          <div x-show="selectedFile" class="text-sky-600 dark:text-sky-400">
+            <svg class="mx-auto h-16 w-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <p class="text-lg font-semibold" x-text="selectedFile?.name"></p>
+            <p class="text-sm" x-text="formatFileSize(selectedFile?.size)"></p>
+          </div>
+          
+          <input type="file" x-ref="fileInput" @change="handleFileSelect($event)" 
+                 accept=".pdf,.docx,.doc,.txt" class="hidden">
+        </div>
+        
+        <button @click="analyzeResume()" 
+                :disabled="!selectedFile || analyzing"
+                class="mt-6 w-full bg-sky-500 text-white py-3 rounded-lg font-semibold hover:bg-sky-600 disabled:bg-slate-300 disabled:cursor-not-allowed transition">
+          <span x-show="!analyzing">🚀 Analyze Resume</span>
+          <span x-show="analyzing">⏳ Analyzing...</span>
+        </button>
+      </div>
+
+      <!-- Results Section -->
+      <div x-show="results" x-cloak class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
+        <h2 class="text-2xl font-bold mb-6">📊 Analysis Results</h2>
+        
+        <!-- Overall Score -->
+        <div class="flex items-center justify-center mb-8">
+          <div class="score-circle bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-xl">
+            <div class="text-center">
+              <div x-text="results?.overall_score + '%'"></div>
+              <div class="text-sm font-normal" x-text="results?.grade"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Score Breakdown -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-sm text-slate-600 dark:text-slate-400 mb-1">Format</div>
+            <div class="text-2xl font-bold" x-text="results?.scores?.format + '%'"></div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-sm text-slate-600 dark:text-slate-400 mb-1">Content</div>
+            <div class="text-2xl font-bold" x-text="results?.scores?.content + '%'"></div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-sm text-slate-600 dark:text-slate-400 mb-1">Structure</div>
+            <div class="text-2xl font-bold" x-text="results?.scores?.structure + '%'"></div>
+          </div>
+        </div>
+        
+        <!-- Feedback -->
+        <div class="mb-6">
+          <h3 class="text-xl font-bold mb-4">💡 Recommendations</h3>
+          <div class="space-y-3">
+            <template x-for="item in results?.feedback" :key="item.message">
+              <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700"
+                   :class="'feedback-' + item.type">
+                <div class="flex items-start gap-3">
+                  <span class="text-2xl" x-text="getFeedbackIcon(item.type)"></span>
+                  <div class="flex-1">
+                    <div class="font-semibold mb-1" x-text="item.category"></div>
+                    <div class="text-sm" x-text="item.message"></div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-2xl font-bold" x-text="results?.word_count"></div>
+            <div class="text-sm text-slate-600 dark:text-slate-400">Words</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-2xl font-bold" x-text="results?.action_verbs?.count"></div>
+            <div class="text-sm text-slate-600 dark:text-slate-400">Action Verbs</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-2xl font-bold" x-text="results?.achievements?.numbers_found"></div>
+            <div class="text-sm text-slate-600 dark:text-slate-400">Quantifiable</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg">
+            <div class="text-2xl font-bold" x-text="Object.values(results?.structure || {}).filter(v => v).length"></div>
+            <div class="text-sm text-slate-600 dark:text-slate-400">Sections</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate Tab -->
+    <div x-show="activeTab === 'generate'" x-cloak>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
+        <h2 class="text-2xl font-bold mb-4">Generate Professional Resume</h2>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">Choose a template and fill in your details</p>
+        
+        <!-- Template Selection -->
+        <div class="mb-8">
+          <h3 class="text-lg font-bold mb-4">🎨 Choose Your Template</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div @click="selectedTemplate = 'professional'" 
+                 :class="selectedTemplate === 'professional' ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20' : 'border-slate-300 dark:border-slate-600'"
+                 class="border-2 rounded-lg p-4 cursor-pointer hover:border-sky-400 transition">
+              <div class="text-3xl mb-2 text-center">📄</div>
+              <div class="font-semibold text-center">Professional</div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">Clean & Modern</div>
+            </div>
+            
+            <div @click="selectedTemplate = 'modern'" 
+                 :class="selectedTemplate === 'modern' ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20' : 'border-slate-300 dark:border-slate-600'"
+                 class="border-2 rounded-lg p-4 cursor-pointer hover:border-sky-400 transition">
+              <div class="text-3xl mb-2 text-center">✨</div>
+              <div class="font-semibold text-center">Modern</div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">Bold & Eye-catching</div>
+            </div>
+            
+            <div @click="selectedTemplate = 'executive'" 
+                 :class="selectedTemplate === 'executive' ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20' : 'border-slate-300 dark:border-slate-600'"
+                 class="border-2 rounded-lg p-4 cursor-pointer hover:border-sky-400 transition">
+              <div class="text-3xl mb-2 text-center">👔</div>
+              <div class="font-semibold text-center">Executive</div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">Senior Level</div>
+            </div>
+            
+            <div @click="selectedTemplate = 'creative'" 
+                 :class="selectedTemplate === 'creative' ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20' : 'border-slate-300 dark:border-slate-600'"
+                 class="border-2 rounded-lg p-4 cursor-pointer hover:border-sky-400 transition">
+              <div class="text-3xl mb-2 text-center">🎨</div>
+              <div class="font-semibold text-center">Creative</div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">Design Roles</div>
+            </div>
+            
+            <div @click="selectedTemplate = 'technical'" 
+                 :class="selectedTemplate === 'technical' ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20' : 'border-slate-300 dark:border-slate-600'"
+                 class="border-2 rounded-lg p-4 cursor-pointer hover:border-sky-400 transition">
+              <div class="text-3xl mb-2 text-center">💻</div>
+              <div class="font-semibold text-center">Technical</div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">IT & Engineering</div>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-slate-600 dark:text-slate-400 text-center">
+            Selected: <span class="font-semibold text-sky-600 dark:text-sky-400" x-text="selectedTemplate.charAt(0).toUpperCase() + selectedTemplate.slice(1)"></span>
+          </div>
+        </div>
+        
+        <form @submit.prevent="generateResume()" class="space-y-6">
+          
+          <!-- Personal Info -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-2">Full Name *</label>
+              <input type="text" x-model="formData.name" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Email *</label>
+              <input type="email" x-model="formData.email" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Phone *</label>
+              <input type="tel" x-model="formData.phone" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Location *</label>
+              <input type="text" x-model="formData.location" required placeholder="City, Country"
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+            </div>
+          </div>
+          
+          <!-- Professional Summary -->
+          <div>
+            <label class="block text-sm font-semibold mb-2">Professional Summary *</label>
+            <textarea x-model="formData.summary" required rows="3"
+                      placeholder="3-4 lines highlighting your expertise, experience, and career goals"
+                      class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700"></textarea>
+          </div>
+          
+          <!-- Skills -->
+          <div>
+            <label class="block text-sm font-semibold mb-2">Core Skills *</label>
+            <input type="text" x-model="formData.skills" required
+                   placeholder="e.g., Python, JavaScript, Project Management, Leadership"
+                   class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+          </div>
+          
+          <!-- Experience -->
+          <div class="border-t pt-6">
+            <h3 class="text-lg font-bold mb-4">Work Experience</h3>
+            <div class="space-y-4">
+              <input type="text" x-model="formData.company1" placeholder="Company Name *" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+              <input type="text" x-model="formData.title1" placeholder="Job Title *" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+              <input type="text" x-model="formData.dates1" placeholder="Duration (e.g., Jan 2020 - Present) *" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+            </div>
+          </div>
+          
+          <!-- Education -->
+          <div class="border-t pt-6">
+            <h3 class="text-lg font-bold mb-4">Education</h3>
+            <div class="space-y-4">
+              <input type="text" x-model="formData.degree" placeholder="Degree (e.g., Bachelor of Science) *" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+              <input type="text" x-model="formData.university" placeholder="University Name *" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+              <input type="text" x-model="formData.grad_year" placeholder="Graduation Year *" required
+                     class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+            </div>
+          </div>
+          
+          <button type="submit" :disabled="generating"
+                  class="w-full bg-sky-500 text-white py-3 rounded-lg font-semibold hover:bg-sky-600 disabled:bg-slate-300 transition">
+            <span x-show="!generating">✨ Generate Resume</span>
+            <span x-show="generating">⏳ Generating...</span>
+          </button>
+        </form>
+        
+        <!-- Generated Resume Preview -->
+        <div x-show="generatedResume" x-cloak class="mt-8 p-6 bg-slate-50 dark:bg-slate-700 rounded-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">📄 Your Resume</h3>
+            <div class="flex gap-2">
+              <button @click="downloadResume()" 
+                      class="px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition">
+                📝 Download TXT
+              </button>
+              <button @click="downloadPDF()" 
+                      :disabled="downloadingPDF"
+                      class="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 disabled:bg-slate-300 transition">
+                <span x-show="!downloadingPDF">📄 Download PDF</span>
+                <span x-show="downloadingPDF">⏳ Generating...</span>
+              </button>
+            </div>
+          </div>
+          <pre class="whitespace-pre-wrap text-sm font-mono" x-text="generatedResume"></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    function theme(){
+      return {
+        dark:false,
+        init(){
+          const saved = localStorage.getItem('iv_theme');
+          this.dark = saved === 'dark';
+        },
+        toggleTheme(){
+          this.dark = !this.dark;
+          localStorage.setItem('iv_theme', this.dark ? 'dark':'light');
+        }
+      }
+    }
+    
+    function resumeApp() {
+      return {
+        activeTab: 'analyze',
+        selectedTemplate: 'professional',
+        selectedFile: null,
+        dragOver: false,
+        analyzing: false,
+        generating: false,
+        downloadingPDF: false,
+        results: null,
+        generatedResume: null,
+        formData: {
+          name: '',
+          email: '',
+          phone: '',
+          location: '',
+          summary: '',
+          skills: '',
+          company1: '',
+          title1: '',
+          dates1: '',
+          degree: '',
+          university: '',
+          grad_year: '',
+          template: 'professional'
+        },
+        
+        handleFileSelect(event) {
+          const file = event.target.files[0];
+          if (file && file.size <= 5 * 1024 * 1024) {
+            this.selectedFile = file;
+          } else {
+            alert('File too large. Max 5MB.');
+          }
+        },
+        
+        handleDrop(event) {
+          this.dragOver = false;
+          const file = event.dataTransfer.files[0];
+          if (file && file.size <= 5 * 1024 * 1024) {
+            this.selectedFile = file;
+          }
+        },
+        
+        formatFileSize(bytes) {
+          if (!bytes) return '';
+          return (bytes / 1024).toFixed(1) + ' KB';
+        },
+        
+        async analyzeResume() {
+          if (!this.selectedFile) return;
+          
+          this.analyzing = true;
+          this.results = null;
+          
+          const formData = new FormData();
+          formData.append('file', this.selectedFile);
+          
+          try {
+            const response = await fetch('/api/resume/analyze', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              this.results = data;
+            } else {
+              alert('Error: ' + (data.error || 'Analysis failed'));
+            }
+          } catch (error) {
+            alert('Error analyzing resume: ' + error.message);
+          } finally {
+            this.analyzing = false;
+          }
+        },
+        
+        async generateResume() {
+          this.generating = true;
+          this.generatedResume = null;
+          
+          // Update formData with selected template
+          this.formData.template = this.selectedTemplate;
+          
+          try {
+            const response = await fetch('/api/resume/generate', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(this.formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              this.generatedResume = data.resume;
+            } else {
+              alert('Error: ' + (data.error || 'Generation failed'));
+            }
+          } catch (error) {
+            alert('Error generating resume: ' + error.message);
+          } finally {
+            this.generating = false;
+          }
+        },
+        
+        downloadResume() {
+          const blob = new Blob([this.generatedResume], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'resume_' + this.formData.name.replace(/\s+/g, '_') + '.txt';
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        
+        async downloadPDF() {
+          this.downloadingPDF = true;
+          
+          // Prepare data with selected template
+          const data = {
+            ...this.formData,
+            template: this.selectedTemplate
+          };
+          
+          try {
+            const response = await fetch('/api/resume/download-pdf', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+              // Get the PDF blob
+              const blob = await response.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'resume_' + this.formData.name.replace(/\s+/g, '_') + '.pdf';
+              a.click();
+              URL.revokeObjectURL(url);
+            } else {
+              const error = await response.json();
+              alert('Error: ' + (error.error || 'PDF generation failed'));
+            }
+          } catch (error) {
+            alert('Error downloading PDF: ' + error.message);
+          } finally {
+            this.downloadingPDF = false;
+          }
+        },
+        
+        getFeedbackIcon(type) {
+          const icons = {
+            'critical': '🔴',
+            'warning': '⚠️',
+            'info': 'ℹ️',
+            'success': '✅'
+          };
+          return icons[type] || 'ℹ️';
+        }
+      }
+    }
+  </script>
+  
+  <script src="{{ url_for('static', path='expanding-menu.js') }}"></script>
+</body>
+</html>

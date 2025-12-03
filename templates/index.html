@@ -117,23 +117,28 @@
         </div>
       </div>
       
-      <a href="/profile" class="menu-link" aria-label="Profile">
-        <span class="menu-link-icon">account_circle</span>
-        <span class="menu-link-title">Profile</span>
-      </a>
-      
-      <!-- Theme Toggle -->
-      <button @click="toggleTheme()" class="menu-link" aria-label="Toggle Theme" type="button">
-        <span class="menu-link-icon" x-text="dark ? 'dark_mode' : 'light_mode'">light_mode</span>
-        <span class="menu-link-title" x-text="dark ? 'Dark' : 'Light'">Light</span>
-      </button>
-      
       <a href="/logout" class="menu-link" aria-label="Logout">
         <span class="menu-link-icon">logout</span>
         <span class="menu-link-title">Logout</span>
       </a>
     </nav>
   </div>
+
+  <!-- Profile Icon - Top Right Corner -->
+  <a href="/profile" class="fixed top-6 right-6 z-[1001] group" aria-label="Profile">
+    <div class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 border-2 border-sky-400 dark:border-sky-500 
+                flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 
+                hover:scale-110 cursor-pointer backdrop-blur-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sky-500 dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    </div>
+    <!-- Tooltip -->
+    <div class="absolute top-full right-0 mt-2 px-3 py-1 bg-slate-900 text-white text-sm rounded-lg 
+                opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+      Profile
+    </div>
+  </a>
 
   <!-- HERO SECTION -->
   <section class="relative h-[90vh] flex items-center justify-center text-center overflow-hidden">

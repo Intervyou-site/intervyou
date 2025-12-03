@@ -49,22 +49,23 @@
       <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 grid place-items-center text-white font-bold shadow-md">AI</div>
       <span class="text-white font-semibold text-lg drop-shadow">IntervYou</span>
     </div>
-
-    <button @click="toggleTheme()" title="Toggle Theme"
-            class="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition">
-      <template x-if="!dark">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 3v1m0 16v1m8.66-11.66l-.7.7M4.04 19.96l-.7-.7M21 12h-1M4 12H3m15.66 4.66l-.7-.7M4.04 4.04l-.7.7"/>
-        </svg>
-      </template>
-      <template x-if="dark">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z"/>
-        </svg>
-      </template>
-    </button>
   </nav>
+
+  <!-- Profile Icon - Top Right Corner -->
+  <a href="/profile" class="fixed top-6 right-6 z-[1001] group" aria-label="Profile">
+    <div class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 border-2 border-sky-400 dark:border-sky-500 
+                flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 
+                hover:scale-110 cursor-pointer backdrop-blur-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sky-500 dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    </div>
+    <!-- Tooltip -->
+    <div class="absolute top-full right-0 mt-2 px-3 py-1 bg-slate-900 text-white text-sm rounded-lg 
+                opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+      Profile
+    </div>
+  </a>
 
   <!-- ====== HERO BACKGROUND ====== -->
   <header class="relative min-h-[95vh] flex items-center justify-center overflow-hidden">

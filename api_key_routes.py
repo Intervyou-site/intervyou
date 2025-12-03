@@ -32,7 +32,7 @@ class RevokeAPIKeyRequest(BaseModel):
 # ============= Web UI Routes =============
 
 @router.get("/manage", response_class=HTMLResponse)
-async def api_keys_page(request: Request, db: Session = Depends(lambda: None)):
+async def api_keys_page(request: Request):
     """Render API key management page"""
     try:
         # Import here to avoid circular dependency
@@ -78,8 +78,7 @@ async def api_keys_page(request: Request, db: Session = Depends(lambda: None)):
 async def create_new_api_key(
     request: Request,
     key_name: str = Form(...),
-    expires_in_days: Optional[int] = Form(None),
-    db: Session = Depends(lambda: None)
+    expires_in_days: Optional[int] = Form(None)
 ):
     """Create a new API key for the logged-in user"""
     # Import here to avoid circular dependency
@@ -135,8 +134,7 @@ async def create_new_api_key(
 @router.post("/revoke")
 async def revoke_key(
     request: Request,
-    key_id: int = Form(...),
-    db: Session = Depends(lambda: None)
+    key_id: int = Form(...)
 ):
     """Revoke an API key"""
     from fastapi_app import get_db, get_current_user
@@ -166,10 +164,7 @@ async def revoke_key(
 
 
 @router.get("/list")
-async def list_keys(
-    request: Request,
-    db: Session = Depends(lambda: None)
-):
+async def list_keys(request: Request):
     """List all API keys for the current user"""
     from fastapi_app import get_db, get_current_user
     
