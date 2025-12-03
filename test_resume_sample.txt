@@ -1,0 +1,49 @@
+JOHN DOE
+john.doe@email.com | +1-234-567-8900 | New York, NY
+LinkedIn: linkedin.com/in/johndoe
+
+PROFESSIONAL SUMMARY
+Results-driven Software Engineer with 5+ years of experience in full-stack development. Proven track record of delivering scalable solutions and leading cross-functional teams. Expertise in Python, JavaScript, and cloud technologies.
+
+CORE COMPETENCIES
+• Python • JavaScript • React • Node.js • AWS • Docker • Kubernetes • Agile Methodologies
+
+PROFESSIONAL EXPERIENCE
+
+Tech Solutions Inc. | New York, NY
+Senior Software Engineer | January 2021 - Present
+• Developed and deployed microservices architecture that improved system performance by 40%
+• Led a team of 5 engineers to deliver a customer-facing application serving 100K+ users
+• Reduced deployment time by 60% through implementation of CI/CD pipelines
+• Mentored junior developers and conducted code reviews to maintain code quality
+
+Digital Innovations Corp. | Boston, MA
+Software Engineer | June 2019 - December 2020
+• Built RESTful APIs handling 1M+ requests per day with 99.9% uptime
+• Optimized database queries resulting in 35% faster response times
+• Collaborated with product team to define technical requirements
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+Massachusetts Institute of Technology, 2019
+GPA: 3.8/4.0
+
+CERTIFICATIONS
+• AWS Certified Solutions Architect - Amazon Web Services, 2022
+• Certified Kubernetes Administrator - CNCF, 2021
+
+TECHNICAL SKILLS
+• Programming: Python, JavaScript, TypeScript, Java
+• Frameworks: React, Node.js, Django, Flask
+• Tools: Docker, Kubernetes, Jenkins, Git
+• Databases: PostgreSQL, MongoDB, Redis
+
+PROJECTS
+E-Commerce Platform | React, Node.js, AWS
+• Architected and developed a scalable e-commerce platform processing $2M+ in transactions
+• Implemented payment gateway integration and real-time inventory management
+
+AWARDS & RECOGNITION
+• Employee of the Year - Tech Solutions Inc., 2023
+• Best Innovation Award - Digital Innovations Corp., 2020

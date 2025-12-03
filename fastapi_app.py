@@ -3267,6 +3267,97 @@ else:
 # End of patch
 
 # ---------------------------
+# Resume Analyzer & Generator Routes
+# ---------------------------
+from resume_analyzer import (
+    analyze_resume_full,
+    generate_mnc_resume_template
+)
+
+@app.get("/resume", response_class=HTMLResponse)
+async def resume_page(request: Request, db=Depends(get_db)):
+    """Resume analyzer and generator page"""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    
+    return templates.TemplateResponse("resume.html", {
+        "request": request,
+        "user": user
+    })
+
+
+@app.post("/api/resume/analyze")
+async def analyze_resume_api(
+    request: Request,
+    file: UploadFile = File(...),
+    db=Depends(get_db)
+):
+    """API endpoint to analyze uploaded resume"""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"success": False, "error": "Authentication required"}, status_code=401)
+    
+    try:
+        # Read file content
+        file_bytes = await file.read()
+        
+        # Validate file size (5MB max)
+        if len(file_bytes) > 5 * 1024 * 1024:
+            return JSONResponse({
+                "success": False,
+                "error": "File too large. Maximum size is 5MB."
+            }, status_code=400)
+        
+        # Analyze resume
+        result = analyze_resume_full(file_bytes, file.filename)
+        
+        return JSONResponse(result)
+        
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.post("/api/resume/generate")
+async def generate_resume_api(
+    request: Request,
+    data: dict = Body(...),
+    db=Depends(get_db)
+):
+    """API endpoint to generate MNC-standard resume"""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"success": False, "error": "Authentication required"}, status_code=401)
+    
+    try:
+        # Validate required fields
+        required_fields = ['name', 'email', 'phone', 'location', 'summary', 'skills']
+        for field in required_fields:
+            if not data.get(field):
+                return JSONResponse({
+                    "success": False,
+                    "error": f"Missing required field: {field}"
+                }, status_code=400)
+        
+        # Generate resume template
+        resume_text = generate_mnc_resume_template(data)
+        
+        return JSONResponse({
+            "success": True,
+            "resume": resume_text
+        })
+        
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+# ---------------------------
 # Run instructions (uvicorn)
 # ---------------------------
 if __name__ == "__main__":

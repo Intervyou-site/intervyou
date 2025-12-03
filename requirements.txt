@@ -55,8 +55,10 @@ websockets>=12.0               # Real-time analysis support
 scikit-learn>=1.5.1
 textblob>=0.18.0
 
-# ---- PDF Generation ----
+# ---- PDF Generation & Document Processing ----
 reportlab>=4.2.0
+PyPDF2>=3.0.0
+python-docx>=1.1.0
 
 # ---- Language Tools (Requires Java - disabled for deployment) ----
 # language-tool-python>=2.8.0

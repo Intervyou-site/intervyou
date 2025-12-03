@@ -1,0 +1,55 @@
+# Azure Container Apps Deployment Configuration
+# This file defines your Azure infrastructure
+
+name: intervyou-app
+location: eastus  # Change to your preferred region
+
+# Container App Configuration
+containerApp:
+  name: intervyou-app
+  resourceGroup: intervyou-rg
+  environment: intervyou-env
+  
+  # Container settings
+  container:
+    image: intervyou:latest  # Will be pushed to Azure Container Registry
+    cpu: 1.0
+    memory: 2Gi
+    
+  # Scaling configuration
+  scale:
+    minReplicas: 1
+    maxReplicas: 3
+    rules:
+      - name: http-scaling
+        http:
+          concurrentRequests: 100
+
+  # Ingress (external access)
+  ingress:
+    external: true
+    targetPort: 8000
+    allowInsecure: false  # Force HTTPS
+    traffic:
+      - latestRevision: true
+        weight: 100
+
+# Azure Database for PostgreSQL
+database:
+  name: intervyou-db
+  resourceGroup: intervyou-rg
+  sku: B_Gen5_1  # Basic tier - upgrade to GP_Gen5_2 for production
+  version: "15"
+  storageMB: 51200  # 50GB
+  backupRetentionDays: 7
+  geoRedundantBackup: false  # Set true for production
+
+# Azure Storage Account (for uploads, audio, static files)
+storage:
+  name: intervyoustorage  # Must be globally unique, lowercase, no hyphens
+  resourceGroup: intervyou-rg
+  sku: Standard_LRS  # Locally redundant storage
+  containers:
+    - uploads
+    - audio
+    - static-uploads
