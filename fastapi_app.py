@@ -203,6 +203,10 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 from auth_routes import router as auth_router
 app.include_router(auth_router)
 
+# Include API key management routes
+from api_key_routes import router as api_key_router
+app.include_router(api_key_router)
+
 # ---------------------------
 # Database (SQLAlchemy)
 # ---------------------------
@@ -3277,6 +3281,7 @@ from resume_templates import (
     generate_resume,
     get_available_templates
 )
+from resume_pdf_generator import generate_pdf_resume
 
 @app.get("/resume", response_class=HTMLResponse)
 async def resume_page(request: Request, db=Depends(get_db)):
@@ -3378,6 +3383,52 @@ async def get_templates_api(request: Request, db=Depends(get_db)):
             "success": True,
             "templates": templates
         })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.post("/api/resume/download-pdf")
+async def download_resume_pdf(
+    request: Request,
+    data: dict = Body(...),
+    db=Depends(get_db)
+):
+    """API endpoint to generate and download resume as PDF"""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"success": False, "error": "Authentication required"}, status_code=401)
+    
+    try:
+        # Validate required fields
+        required_fields = ['name', 'email', 'phone', 'location', 'summary']
+        for field in required_fields:
+            if not data.get(field):
+                return JSONResponse({
+                    "success": False,
+                    "error": f"Missing required field: {field}"
+                }, status_code=400)
+        
+        # Get template choice (default to professional)
+        template_name = data.get('template', 'professional')
+        
+        # Generate PDF
+        pdf_buffer = generate_pdf_resume(data, template_name)
+        
+        # Create filename
+        filename = f"resume_{data.get('name', 'document').replace(' ', '_')}.pdf"
+        
+        # Return PDF as download
+        return Response(
+            content=pdf_buffer.getvalue(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
     except Exception as e:
         return JSONResponse({
             "success": False,
