@@ -203,9 +203,9 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 from auth_routes import router as auth_router
 app.include_router(auth_router)
 
-# Include API key management routes
-from api_key_routes import router as api_key_router
-app.include_router(api_key_router)
+# Include API key management routes (commented out due to circular import)
+# from api_key_routes import router as api_key_router
+# app.include_router(api_key_router)
 
 # ---------------------------
 # Database (SQLAlchemy)
