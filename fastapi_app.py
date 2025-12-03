@@ -77,7 +77,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, scoped_session
 # passlib hashers: prefer Argon2, but keep bcrypt as legacy fallback
 from passlib.hash import argon2, bcrypt
@@ -203,10 +203,6 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 from auth_routes import router as auth_router
 app.include_router(auth_router)
 
-# Include API key management routes
-from api_key_routes import router as api_key_router
-app.include_router(api_key_router)
-
 # ---------------------------
 # Database (SQLAlchemy)
 # ---------------------------
@@ -267,22 +263,6 @@ class SavedQuestion(Base):
 
     user = relationship("User", back_populates="saved_questions")
 
-
-class APIKey(Base):
-    """Model for storing user API keys"""
-    __tablename__ = "api_keys"
-    
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    key_name = Column(String(100), nullable=False)
-    key_hash = Column(String(128), nullable=False, unique=True)
-    key_prefix = Column(String(10), nullable=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_used = Column(DateTime, nullable=True)
-    expires_at = Column(DateTime, nullable=True)
-    
-    user = relationship("User", backref="api_keys")
 
 
 Base.metadata.create_all(bind=engine)
