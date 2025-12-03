@@ -203,6 +203,10 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 from auth_routes import router as auth_router
 app.include_router(auth_router)
 
+# Include Online IDE routes
+from online_ide import ide_router
+app.include_router(ide_router)
+
 # ---------------------------
 # Database (SQLAlchemy)
 # ---------------------------
@@ -1989,6 +1993,16 @@ def saved_questions(request: Request, db=Depends(get_db)):
         return RedirectResponse("/login")
     saved = db.query(SavedQuestion).filter_by(user_id=user.id).order_by(SavedQuestion.timestamp.desc()).all()
     return templates.TemplateResponse("saved.html", {"request": request, "saved": saved})
+
+
+# ---------------- ONLINE IDE ----------------
+@app.get("/ide", response_class=HTMLResponse)
+def online_ide(request: Request, db=Depends(get_db)):
+    """AI-Powered Online IDE with intelligent error explanations"""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    return templates.TemplateResponse("ide.html", {"request": request, "user": user})
 
 
 @app.delete("/delete_saved/{sid}")

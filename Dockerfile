@@ -3,10 +3,13 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including compilers for IDE
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    default-jdk \
+    nodejs \
+    npm \
     libsndfile1 \
     ffmpeg \
     curl \
