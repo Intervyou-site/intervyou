@@ -3273,6 +3273,10 @@ from resume_analyzer import (
     analyze_resume_full,
     generate_mnc_resume_template
 )
+from resume_templates import (
+    generate_resume,
+    get_available_templates
+)
 
 @app.get("/resume", response_class=HTMLResponse)
 async def resume_page(request: Request, db=Depends(get_db)):
@@ -3327,14 +3331,14 @@ async def generate_resume_api(
     data: dict = Body(...),
     db=Depends(get_db)
 ):
-    """API endpoint to generate MNC-standard resume"""
+    """API endpoint to generate professional resume with templates"""
     user = get_current_user(request, db)
     if not user:
         return JSONResponse({"success": False, "error": "Authentication required"}, status_code=401)
     
     try:
         # Validate required fields
-        required_fields = ['name', 'email', 'phone', 'location', 'summary', 'skills']
+        required_fields = ['name', 'email', 'phone', 'location', 'summary']
         for field in required_fields:
             if not data.get(field):
                 return JSONResponse({
@@ -3342,14 +3346,38 @@ async def generate_resume_api(
                     "error": f"Missing required field: {field}"
                 }, status_code=400)
         
-        # Generate resume template
-        resume_text = generate_mnc_resume_template(data)
+        # Get template choice (default to professional)
+        template_name = data.get('template', 'professional')
+        
+        # Generate resume using selected template
+        resume_text = generate_resume(data, template_name)
         
         return JSONResponse({
             "success": True,
-            "resume": resume_text
+            "resume": resume_text,
+            "template": template_name
         })
         
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.get("/api/resume/templates")
+async def get_templates_api(request: Request, db=Depends(get_db)):
+    """API endpoint to get available resume templates"""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"success": False, "error": "Authentication required"}, status_code=401)
+    
+    try:
+        templates = get_available_templates()
+        return JSONResponse({
+            "success": True,
+            "templates": templates
+        })
     except Exception as e:
         return JSONResponse({
             "success": False,

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" x-data="theme()" x-init="init()" :class="dark ? 'theme-dark' : ''">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>📄 Resume Builder — IntervYou</title>
+  
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <link rel="stylesheet" href="{{ url_for('static', path='theme.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='expanding-menu.css') }}">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak]{display:none!important;}
+    
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      transition: all 0.3s;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #0ea5e9;
+      background-color: #f0f9ff;
+    }
+    .dark .upload-zone {
+      border-color: #475569;
+    }
+    .dark .upload-zone:hover, .dark .upload-zone.drag-over {
+      border-color: #0ea5e9;
+      background-color: #1e293b;
+    }
+    
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      position: relative;
+    }
+    
+    .feedback-critical { border-left: 4px solid #ef4444; }
+    .feedback-warning { border-left: 4px solid #f59e0b; }
+    .feedback-info { border-left: 4px solid #3b82f6; }
+    .feedback-success { border-left: 4px solid #10b981; }
+    
+    .template-card {
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .template-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .template-card.selected {
+      border: 2px solid #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14,165,233,0.1);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-slate-900 antialiased dark:bg-slate-900 dark:text-slate-100">
+
+  <!-- Hover trigger area for navbar -->
+  <div class="nav-hover-trigger"></div>
+  
+  <!-- Expanding Menu Navigation -->
+  <div class="expanding-menu-container">
+    <nav class="expanding-menu" role="navigation">
+      <a href="/" class="menu-link">
+        <span class="menu-link-icon">home</span>
+        <span class="menu-link-title">Home</span>
+      </a>
+      
+      <div class="menu-link explore-dropdown">
+        <span class="menu-link-icon">explore</span>
+        <span class="menu-link-title">Explore</span>
+        
+        <div class="explore-panel">
+          <a href="/practice" class="explore-item">
+            <span class="material-symbols-rounded">psychology</span>
+            <span>Practice</span>
+          </a>
+          <a href="/mock_interview" class="explore-item">
+            <span class="material-symbols-rounded">school</span>
+            <span>Mock Interview</span>
+          </a>
+          <a href="/video_interview" class="explore-item">
+            <span class="material-symbols-rounded">videocam</span>
+            <span>Video Interview</span>
+          </a>
+          <a href="/report" class="explore-item">
+            <span class="material-symbols-rounded">analytics</span>
+            <span>Report</span>
+          </a>
+          <a href="/leaderboard" class="explore-item">
+            <span class="material-symbols-rounded">leaderboard</span>
+            <span>Leaderboard</span>
+          </a>
+          <a href="/advisor" class="explore-item">
+            <span class="material-symbols-rounded">support_agent</span>
+            <span>Advisor</span>
+          </a>
+          <a href="/resume" class="explore-item">
+            <span class="material-symbols-rounded">description</span>
+            <span>Resume Builder</span>
+          </a>
+          <a href="/saved" class="explore-item">
+            <span class="material-symbols-rounded">bookmark</span>
+            <span>Saved</span>
+          </a>
+        </div>
+      </div>
+      
+      <a href="/profile" class="menu-link">
+        <span class="menu-link-icon">account_circle</span>
+        <span class="menu-link-title">Profile</span>
+      </a>
+      
+      <button @click="toggleTheme()" class="menu-link" type="button">
+        <span class="menu-link-icon" x-text="dark ? 'dark_mode' : 'light_mode'">light_mode</span>
+        <span class="menu-link-title" x-text="dark ? 'Dark' : 'Light'">Light</span>
+      </button>
+      
+      <a href="/logout" class="menu-link">
+        <span class="menu-link-icon">logout</span>
+        <span class="menu-link-title">Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 py-8" x-data="resumeBuilderApp()">
+
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold mb-2">📄 Professional Resume Builder</h1>
+      <p class="text-slate-600 dark:text-slate-400">Create ATS-friendly resumes with professional templates</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex justify-center mb-8 gap-4 flex-wrap">
+      <button @click="activeTab = 'analyze'" 
+              :class="activeTab === 'analyze' ? 'bg-sky-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+              class="px-6 py-3 rounded-lg font-semibold shadow hover:scale-105 transition">
+        🔍 Analyze Resume
+      </button>
+      <button @click="activeTab = 'build'" 
+              :class="activeTab === 'build' ? 'bg-sky-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+              class="px-6 py-3 rounded-lg font-semibold shadow hover:scale-105 transition">
+        ✨ Build Resume
+      </button>
+      <button @click="activeTab = 'templates'" 
+              :class="activeTab === 'templates' ? 'bg-sky-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+              class="px-6 py-3 rounded-lg font-semibold shadow hover:scale-105 transition">
+        🎨 Choose Template
+      </button>
+    </div>
