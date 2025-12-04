@@ -3307,6 +3307,14 @@ async def resume_page(request: Request, db=Depends(get_db)):
     })
 
 
+@app.get("/resume/builder", response_class=HTMLResponse)
+async def resume_builder_page(request: Request):
+    """Modern Zety-style resume builder"""
+    return templates.TemplateResponse("resume_zety.html", {
+        "request": request
+    })
+
+
 @app.post("/api/resume/analyze")
 async def analyze_resume_api(
     request: Request,

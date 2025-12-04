@@ -1,69 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" x-data="{ dark: false }" x-init="dark = localStorage.getItem('theme') === 'dark'" :class="dark ? 'dark' : ''">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💻 Code Editor — InterVyou</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <title>💻 Code Editor — IntervYou</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='/ide.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        [x-cloak] { display: none !important; }
-        @keyframes gradientMove {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        .animate-gradient {
-            background-size: 200% 200%;
-            animation: gradientMove 12s ease infinite;
-        }
-    </style>
 </head>
-<body class="bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-    <!-- Navigation -->
-    <nav class="fixed top-0 left-0 w-full z-50 px-6 py-4 flex items-center justify-between bg-transparent">
-        <div class="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform" onclick="window.location.href='/'">
-            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 grid place-items-center text-white font-bold">AI</div>
-            <div class="text-white font-semibold drop-shadow">InterVyou</div>
+<body>
+    <div class="ide-container">
+        <!-- Header -->
+        <div class="ide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-code"></i> AI Code Editor</h1>
+                <div class="tagline">Smart coding with instant AI-powered error explanations</div>
+            </div>
+            <a href="/" class="btn-back"><i class="fas fa-home"></i> Home</a>
         </div>
-        <div class="flex items-center gap-3">
-            <button @click="dark = !dark; localStorage.setItem('theme', dark ? 'dark' : 'light')" title="Toggle theme" class="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition">
-                <template x-if="!dark">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-11.66l-.7.7M4.04 19.96l-.7-.7M21 12h-1M4 12H3m15.66 4.66l-.7-.7M4.04 4.04l-.7.7"/>
-                    </svg>
-                </template>
-                <template x-if="dark">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z"/>
-                    </svg>
-                </template>
-            </button>
-            <a href="/" class="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition" title="Back to Home">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-            </a>
-        </div>
-    </nav>
-
-    <!-- Header -->
-    <header class="relative min-h-[20vh] flex items-end">
-        <div class="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 animate-gradient"></div>
-        <div class="absolute inset-0 bg-black/24"></div>
-        <div class="relative z-10 max-w-7xl mx-auto px-6 pb-6">
-            <h1 class="text-4xl font-extrabold text-white flex items-center gap-3">
-                <i class="fas fa-code"></i> AI Code Editor
-            </h1>
-            <p class="text-white/90 mt-2">Smart coding with instant AI-powered error explanations</p>
-        </div>
-    </header>
-
-    <div class="ide-container" style="margin-top: -2rem;">
-
+        
         <!-- Main Content -->
         <div class="ide-main">
             <!-- Sidebar -->
@@ -186,8 +141,19 @@
         <p>Executing code...</p>
     </div>
 
-    <!-- Monaco Editor -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <!-- Monaco Editor - Using unpkg for better reliability -->
+    <script src="https://unpkg.com/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    <script>
+        // Debug script loading
+        console.log('Inline script executed');
+        console.log('Monaco loader available:', typeof require !== 'undefined');
+        
+        // Check if editor element exists
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded fired');
+            console.log('Editor element:', document.getElementById('editor'));
+        });
+    </script>
     <script src="{{ url_for('static', path='/ide.js') }}"></script>
 </body>
 </html>

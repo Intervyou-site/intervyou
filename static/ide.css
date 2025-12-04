@@ -9,48 +9,53 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #1e1e1e;
     color: #d4d4d4;
-    overflow: hidden;
 }
 
 .ide-container {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    overflow: hidden;
 }
 
 /* Header */
 .ide-header {
-    background: #2d2d30;
-    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #3e3e42;
+    flex-shrink: 0;
 }
 
 .header-left h1 {
-    font-size: 20px;
-    color: #4ec9b0;
-    margin-bottom: 2px;
+    font-size: 24px;
+    color: white;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .header-left .tagline {
-    font-size: 12px;
-    color: #858585;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .btn-back {
-    background: #0e639c;
+    background: rgba(255, 255, 255, 0.2);
     color: white;
     padding: 8px 16px;
     border-radius: 4px;
     text-decoration: none;
     font-size: 14px;
     transition: background 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-back:hover {
-    background: #1177bb;
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Main Layout */
@@ -66,7 +71,9 @@ body {
     background: #252526;
     border-right: 1px solid #3e3e42;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 15px;
+    height: 100%;
 }
 
 .sidebar-section {
@@ -162,6 +169,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
 }
 
 /* Toolbar */
@@ -172,6 +180,7 @@ body {
     gap: 10px;
     align-items: center;
     border-bottom: 1px solid #3e3e42;
+    flex-shrink: 0;
 }
 
 .btn {
@@ -215,8 +224,10 @@ body {
 
 /* Code Editor */
 .code-editor {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 300px;
+    overflow: hidden;
+    position: relative;
 }
 
 /* Input Section */
@@ -224,6 +235,7 @@ body {
     background: #1e1e1e;
     padding: 10px 15px;
     border-top: 1px solid #3e3e42;
+    flex-shrink: 0;
 }
 
 .input-section label {
@@ -235,7 +247,8 @@ body {
 
 .input-section textarea {
     width: 100%;
-    height: 80px;
+    height: 60px;
+    max-height: 120px;
     background: #2d2d30;
     border: 1px solid #3e3e42;
     color: #d4d4d4;
@@ -253,12 +266,15 @@ body {
     border-left: 1px solid #3e3e42;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 .output-tabs {
     display: flex;
     background: #2d2d30;
     border-bottom: 1px solid #3e3e42;
+    flex-shrink: 0;
 }
 
 .tab-btn {
@@ -286,11 +302,14 @@ body {
     display: none;
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 15px;
+    height: 100%;
 }
 
 .tab-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 .output-placeholder {
@@ -493,5 +512,29 @@ body {
     
     .ide-output {
         width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .ide-main {
+        flex-direction: column;
+    }
+    
+    .ide-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+    }
+    
+    .ide-output {
+        width: 100%;
+        height: 300px;
+        border-left: none;
+        border-top: 1px solid #3e3e42;
+    }
+    
+    .ide-container {
+        height: auto;
+        min-height: 100vh;
     }
 }

@@ -280,12 +280,30 @@ Please provide:
 Keep it concise, friendly, and educational. Format as JSON with keys: explanation, problem_location, fix, tip"""
 
             # Call async function synchronously
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            ai_response = loop.run_until_complete(
-                call_llm_chat("You are a helpful coding tutor.", prompt, model="gpt-4o-mini", max_tokens=500)
-            )
-            loop.close()
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If loop is already running, create a task
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(
+                            lambda: asyncio.run(call_llm_chat("You are a helpful coding tutor.", prompt, model="gpt-4o-mini", max_tokens=500))
+                        )
+                        ai_response = future.result(timeout=10)
+                else:
+                    ai_response = loop.run_until_complete(
+                        call_llm_chat("You are a helpful coding tutor.", prompt, model="gpt-4o-mini", max_tokens=500)
+                    )
+            except:
+                # Fallback: try with new loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    ai_response = loop.run_until_complete(
+                        call_llm_chat("You are a helpful coding tutor.", prompt, model="gpt-4o-mini", max_tokens=500)
+                    )
+                finally:
+                    loop.close()
             
             # Try to parse JSON response
             import json
@@ -345,12 +363,28 @@ Provide:
 Keep it concise and actionable. Format as JSON with keys: score, strengths (array), improvements (array), performance_tip"""
 
             # Call async function synchronously
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            ai_response = loop.run_until_complete(
-                call_llm_chat("You are a code quality analyzer.", prompt, model="gpt-4o-mini", max_tokens=400)
-            )
-            loop.close()
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(
+                            lambda: asyncio.run(call_llm_chat("You are a code quality analyzer.", prompt, model="gpt-4o-mini", max_tokens=400))
+                        )
+                        ai_response = future.result(timeout=10)
+                else:
+                    ai_response = loop.run_until_complete(
+                        call_llm_chat("You are a code quality analyzer.", prompt, model="gpt-4o-mini", max_tokens=400)
+                    )
+            except:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    ai_response = loop.run_until_complete(
+                        call_llm_chat("You are a code quality analyzer.", prompt, model="gpt-4o-mini", max_tokens=400)
+                    )
+                finally:
+                    loop.close()
             
             import json
             try:

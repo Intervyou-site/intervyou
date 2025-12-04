@@ -1,29 +1,133 @@
 // AI-Powered IDE JavaScript
+console.log('IDE JavaScript loaded');
 let editor;
 let currentLanguage = 'python';
 let runCount = 0;
 let successCount = 0;
 
 // Initialize Monaco Editor
-require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+function initializeEditor() {
+    console.log('Initializing Monaco editor...');
+    
+    if (typeof monaco === 'undefined') {
+        console.error('Monaco editor not loaded');
+        document.getElementById('editor').innerHTML = '<div style="color: #f48771; padding: 20px; text-align: center;"><i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i><br>Failed to load code editor. Please refresh the page.</div>';
+        return;
+    }
+    
+    try {
+        const editorElement = document.getElementById('editor');
+        if (!editorElement) {
+            console.error('Editor element not found');
+            return;
+        }
+        
+        editor = monaco.editor.create(editorElement, {
+            value: '# Write your Python code here\ndef solution():\n    # Your code here\n    pass\n\nif __name__ == "__main__":\n    solution()\n',
+            language: 'python',
+            theme: 'vs-dark',
+            fontSize: 14,
+            minimap: { enabled: true },
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            lineNumbers: 'on',
+            renderWhitespace: 'selection',
+            tabSize: 4,
+            wordWrap: 'on'
+        });
 
-require(['vs/editor/editor.main'], function () {
-    editor = monaco.editor.create(document.getElementById('editor'), {
-        value: '',
-        language: 'python',
-        theme: 'vs-dark',
-        fontSize: 14,
-        minimap: { enabled: true },
-        automaticLayout: true,
-        scrollBeyondLastLine: false,
-        lineNumbers: 'on',
-        renderWhitespace: 'selection',
-        tabSize: 4
-    });
+        console.log('Monaco editor initialized successfully');
+        
+        // Load initial template after a short delay
+        setTimeout(() => {
+            loadTemplate();
+        }, 100);
+        
+    } catch (error) {
+        console.error('Failed to initialize Monaco editor:', error);
+        document.getElementById('editor').innerHTML = '<div style="color: #f48771; padding: 20px; text-align: center;"><i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i><br>Error initializing editor: ' + error.message + '</div>';
+    }
+}
 
-    // Load initial template
-    loadTemplate();
+// Wait for Monaco to be ready - using unpkg loader
+require.config({ 
+    paths: { 
+        vs: 'https://unpkg.com/monaco-editor@0.44.0/min/vs' 
+    } 
 });
+
+// Load Monaco with error handling
+window.monacoLoadError = false;
+window.monacoLoadTimeout = setTimeout(function() {
+    if (!editor) {
+        console.error('Monaco failed to load within timeout');
+        window.monacoLoadError = true;
+        createFallbackEditor();
+    }
+}, 10000); // 10 second timeout
+
+try {
+    require(['vs/editor/editor.main'], function () {
+        clearTimeout(window.monacoLoadTimeout);
+        console.log('Monaco loaded, initializing editor...');
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeEditor);
+        } else {
+            initializeEditor();
+        }
+    });
+} catch (error) {
+    console.error('Error loading Monaco:', error);
+    clearTimeout(window.monacoLoadTimeout);
+    createFallbackEditor();
+}
+
+// Fallback editor using textarea
+function createFallbackEditor() {
+    console.log('Creating fallback textarea editor');
+    const editorElement = document.getElementById('editor');
+    if (!editorElement) return;
+    
+    editorElement.innerHTML = `
+        <textarea id="fallbackEditor" style="
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+        "># Write your Python code here
+def solution():
+    # Your code here
+    pass
+
+if __name__ == "__main__":
+    solution()
+</textarea>
+    `;
+    
+    // Create a simple editor object that mimics Monaco's API
+    editor = {
+        getValue: function() {
+            return document.getElementById('fallbackEditor').value;
+        },
+        setValue: function(value) {
+            document.getElementById('fallbackEditor').value = value;
+        },
+        getModel: function() {
+            return {
+                setLanguage: function() {}
+            };
+        }
+    };
+    
+    console.log('Fallback editor created');
+}
 
 // Language mapping for Monaco
 const languageMap = {
@@ -34,28 +138,49 @@ const languageMap = {
     'c': 'c'
 };
 
-// Event Listeners
-document.getElementById('languageSelect').addEventListener('change', (e) => {
-    currentLanguage = e.target.value;
-    monaco.editor.setModelLanguage(editor.getModel(), languageMap[currentLanguage]);
-    loadTemplate();
+// Event Listeners - wrapped in DOMContentLoaded to ensure elements exist
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up event listeners');
+    
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', (e) => {
+            currentLanguage = e.target.value;
+            if (editor && editor.getModel && typeof monaco !== 'undefined') {
+                monaco.editor.setModelLanguage(editor.getModel(), languageMap[currentLanguage]);
+            }
+            loadTemplate();
+        });
+    }
+
+    const runBtn = document.getElementById('runBtn');
+    if (runBtn) runBtn.addEventListener('click', runCode);
+    
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeCode);
+    
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearEditor);
+    
+    const templateBtn = document.getElementById('templateBtn');
+    if (templateBtn) templateBtn.addEventListener('click', loadTemplate);
+    
+    console.log('Event listeners attached');
 });
 
-document.getElementById('runBtn').addEventListener('click', runCode);
-document.getElementById('analyzeBtn').addEventListener('click', analyzeCode);
-document.getElementById('clearBtn').addEventListener('click', clearEditor);
-document.getElementById('templateBtn').addEventListener('click', loadTemplate);
-
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const tabName = btn.dataset.tab;
-        switchTab(tabName);
+// Tab switching and challenges - moved to DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            switchTab(tabName);
+        });
     });
-});
 
-// Load challenges
-loadChallenges();
+    // Load challenges
+    loadChallenges();
+});
 
 // Functions
 async function runCode() {

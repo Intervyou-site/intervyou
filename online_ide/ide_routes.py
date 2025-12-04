@@ -1,11 +1,19 @@
 """
 FastAPI routes for Online IDE
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List
+import os
 from .code_executor import CodeExecutor
 from .language_configs import LANGUAGE_CONFIGS, CODING_CHALLENGES
+
+# Setup templates
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 router = APIRouter(prefix="/ide", tags=["IDE"])
 executor = CodeExecutor()
@@ -20,6 +28,19 @@ class CodeExecutionRequest(BaseModel):
 class CodeAnalysisRequest(BaseModel):
     code: str
     language: str
+
+
+@router.get("", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
+async def ide_page(request: Request):
+    """Serve the IDE HTML page"""
+    return templates.TemplateResponse("ide.html", {"request": request})
+
+
+@router.get("/test", response_class=HTMLResponse)
+async def ide_test_page(request: Request):
+    """Serve a simple test IDE page"""
+    return templates.TemplateResponse("ide_test.html", {"request": request})
 
 
 @router.get("/languages")
