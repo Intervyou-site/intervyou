@@ -1,0 +1,914 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Practice - IntervYou{% endblock %}
+
+{% block extra_head %}
+<style>
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+  }
+  
+  .category-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: center;
+  }
+  
+  .category-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .category-card.active {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-light);
+  }
+  
+  .question-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+  }
+  
+  .difficulty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .difficulty-beginner {
+    background-color: var(--success-light);
+    color: var(--success);
+  }
+  
+  .difficulty-intermediate {
+    background-color: var(--warning-light);
+    color: var(--warning);
+  }
+  
+  .difficulty-advanced {
+    background-color: var(--error-light);
+    color: var(--error);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="practicePage()" x-init="initPractice()">
+  <!-- Category Selection View -->
+  <div x-show="!started" x-cloak>
+    <div class="page-header">
+      <h1 class="page-title">Practice Sessions</h1>
+      <p class="page-subtitle">Select a category to begin practicing interview questions</p>
+    </div>
+    
+    <!-- Company Filter -->
+    <div class="card" style="margin-bottom: var(--spacing-2xl);">
+      <div style="display: flex; align-items: center; gap: var(--spacing-lg);">
+        <label class="form-label" style="margin: 0;">Target Company:</label>
+        <select x-model="selectedCompany" @change="filterByCompany()" class="form-select" style="max-width: 300px;">
+          <option value="">All Companies</option>
+          <template x-for="company in companiesList" :key="company">
+            <option :value="company" x-text="company"></option>
+          </template>
+        </select>
+        <span x-show="selectedCompany" class="badge badge-primary" x-text="'Showing ' + selectedCompany + ' questions'"></span>
+      </div>
+    </div>
+    
+    <!-- Category Grid -->
+    <div class="category-grid">
+      <template x-for="cat in categoriesList" :key="cat">
+        <div @click="choose(cat)" 
+             class="category-card"
+             :class="selectedCandidate === cat ? 'active' : ''"
+             @mouseover="selectedCandidate = cat"
+             @mouseleave="selectedCandidate = null">
+          <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);" x-text="cat"></div>
+        </div>
+      </template>
+    </div>
+  </div>
+  
+  <!-- Practice View -->
+  <div x-show="started" x-cloak>
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: start;">
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-sm);">
+          <h1 class="page-title" style="margin: 0;" x-text="selectedCategory"></h1>
+          <span x-show="selectedCompany" class="badge badge-primary" x-text="selectedCompany"></span>
+        </div>
+        <p class="page-subtitle">Answer the question below and receive AI-powered feedback</p>
+      </div>
+      <button @click="resetToCategories()" class="btn btn-ghost">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to Categories
+      </button>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div style="margin-bottom: var(--spacing-2xl);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
+        <span style="font-size: 13px; color: var(--text-secondary);">Progress</span>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);" x-text="progress + '%'"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-bar-fill" :style="'width: ' + progress + '%'"></div>
+      </div>
+    </div>
+    
+    <!-- Question Card -->
+    <div class="question-card" style="margin-bottom: var(--spacing-2xl);">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-lg);">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+            <span class="difficulty-badge"
+                  :class="{
+                    'difficulty-beginner': currentDifficulty === 'beginner',
+                    'difficulty-intermediate': currentDifficulty === 'intermediate',
+                    'difficulty-advanced': currentDifficulty === 'advanced'
+                  }">
+              <span x-text="currentDifficulty === 'beginner' ? '●' : currentDifficulty === 'intermediate' ? '●●' : '●●●'"></span>
+              <span x-text="currentDifficulty.toUpperCase()"></span>
+            </span>
+            <span style="font-size: 12px; color: var(--text-tertiary);" x-text="questionsAtLevel + ' answered at this level'"></span>
+          </div>
+          <p style="font-size: 18px; font-weight: 500; color: var(--text-primary); line-height: 1.6;" x-text="question"></p>
+        </div>
+        <div style="display: flex; align-items: center; gap: var(--spacing-sm); color: var(--text-tertiary); font-size: 13px;">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span x-text="timeLeft + 's'"></span>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+        <button @click="playQuestion()" class="btn btn-secondary btn-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+          </svg>
+          Play Question
+        </button>
+        
+        <button @click="saveQuestion()" class="btn btn-secondary btn-sm" :class="questionSaved ? 'btn-primary' : ''">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+          </svg>
+          <span x-text="questionSaved ? 'Saved' : 'Save Question'"></span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Answer Section -->
+    <div class="card" style="margin-bottom: var(--spacing-2xl);">
+      <div class="card-header">
+        <h3 class="card-title">Type Your Answer</h3>
+        <p class="card-subtitle">Press Enter to submit, Shift+Enter for new line</p>
+      </div>
+      <div class="form-group" style="position: relative;">
+        <textarea x-model="answerText" 
+                  placeholder="Write your answer here..."
+                  class="form-textarea"
+                  rows="8"
+                  style="padding-right: 60px;"
+                  @keydown.enter.prevent="if(!$event.shiftKey) submitTextAnswer()"></textarea>
+        
+        <!-- Mic Icon Inside Textarea -->
+        <button @click="startSpeechToText()" 
+                :class="isListening ? 'animate-pulse' : ''"
+                :title="isListening ? 'Stop Listening' : 'Start Speech to Text'"
+                style="position: absolute; bottom: 50px; right: 16px; width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all 0.2s;"
+                :style="isListening ? 
+                  'background-color: #3B82F6; color: white;' : 
+                  'background-color: #374151; color: white;'">
+          <svg style="width: 20px; height: 20px;" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-xs);">
+          <span style="font-size: 12px; color: var(--text-tertiary);" 
+                :style="answerText.length < 20 ? 'color: var(--error);' : answerText.length < 100 ? 'color: var(--warning);' : 'color: var(--success);'"
+                x-text="answerText.length + ' characters' + (answerText.length < 20 ? ' (minimum 20)' : answerText.length < 100 ? ' (aim for 100+)' : ' ✓')"></span>
+          <span style="font-size: 12px; color: var(--text-tertiary);" x-text="Math.round(answerText.split(/\s+/).filter(w => w.length > 0).length) + ' words'"></span>
+        </div>
+      </div>
+      <div style="display: flex; gap: var(--spacing-sm);">
+        <button @click="submitTextAnswer()" class="btn btn-primary">Submit Answer</button>
+        <button @click="nextQuestion()" class="btn btn-secondary">Next Question</button>
+      </div>
+    </div>
+    
+    <!-- Feedback Section -->
+    <div x-show="feedback" x-cloak class="card">
+      <div class="card-header">
+        <h3 class="card-title">AI Feedback</h3>
+        <p class="card-subtitle">Detailed analysis of your answer</p>
+      </div>
+      
+      <!-- Score Display -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+        <div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Overall Score</div>
+          <div style="font-size: 32px; font-weight: 700; color: var(--accent-primary);" x-text="feedback?.score ? feedback.score + '/10' : '—'"></div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Clarity</div>
+          <div class="progress-bar" style="margin-top: var(--spacing-sm);">
+            <div class="progress-bar-fill" :style="'width: ' + ((feedback?.clarity || 0) * 10) + '%'"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: var(--spacing-xs);" x-text="(feedback?.clarity || 0) + '/10'"></div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Structure</div>
+          <div class="progress-bar" style="margin-top: var(--spacing-sm);">
+            <div class="progress-bar-fill" :style="'width: ' + ((feedback?.structure || 0) * 10) + '%'"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: var(--spacing-xs);" x-text="(feedback?.structure || 0) + '/10'"></div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Technical Depth</div>
+          <div class="progress-bar" style="margin-top: var(--spacing-sm);">
+            <div class="progress-bar-fill" :style="'width: ' + ((feedback?.technical || 0) * 10) + '%'"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: var(--spacing-xs);" x-text="(feedback?.technical || 0) + '/10'"></div>
+        </div>
+      </div>
+      
+      <!-- Detailed Feedback -->
+      <div style="padding: var(--spacing-lg); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-sm);">Detailed Feedback</h4>
+        
+        <!-- Show warning for very low scores -->
+        <div x-show="feedback?.score < 5" style="padding: var(--spacing-md); background-color: rgba(239, 68, 68, 0.1); border-left: 4px solid #EF4444; border-radius: var(--radius-sm); margin-bottom: var(--spacing-md);">
+          <p style="font-size: 13px; color: #EF4444; font-weight: 600;">⚠️ Low Score Alert</p>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-top: var(--spacing-xs);">Your answer needs significant improvement. Please provide a more detailed, structured response that addresses all aspects of the question.</p>
+        </div>
+        
+        <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap;" x-text="feedback?.comments"></div>
+        
+        <!-- Tips for improvement -->
+        <div x-show="feedback?.score < 7" style="margin-top: var(--spacing-lg); padding: var(--spacing-md); background-color: rgba(59, 130, 246, 0.1); border-left: 4px solid #3B82F6; border-radius: var(--radius-sm);">
+          <p style="font-size: 13px; color: #3B82F6; font-weight: 600; margin-bottom: var(--spacing-xs);">💡 Tips for Better Answers:</p>
+          <ul style="font-size: 13px; color: var(--text-secondary); margin: 0; padding-left: var(--spacing-lg);">
+            <li>Provide specific examples and details</li>
+            <li>Structure your answer clearly (STAR method for behavioral questions)</li>
+            <li>Address all parts of the question</li>
+            <li>Aim for 100-200 words minimum</li>
+            <li>Use technical terms appropriately</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+  function practicePage() {
+    return {
+      // State
+      started: false,
+      selectedCategory: '',
+      selectedCompany: '',
+      selectedCandidate: null,
+      categoriesList: [],
+      companiesList: [],
+      question: 'Select a category to begin practicing',
+      answerText: '',
+      recording: false,
+      transcribing: false,
+      mediaRecorder: null,
+      recordingBlob: null,
+      audioStream: null,
+      feedback: null,
+      renderedFeedback: '',
+      feedbackData: null,
+      lastScore: null,
+      progress: 0,
+      timeLeft: 180,
+      timer: null,
+      currentDifficulty: 'beginner',
+      questionsAtLevel: 0,
+      difficultyScore: 0,
+      questionSaved: false,
+      savingInProgress: false,
+      isListening: false,
+      recognition: null,
+      questionIndex: 0,
+      
+      async initPractice() {
+        // Initialize categories and companies from server data
+        try {
+          const cats = {{ categories|tojson|safe }};
+          const comps = {{ companies|tojson|safe }};
+          this.categoriesList = Array.isArray(cats) ? cats : [];
+          this.companiesList = Array.isArray(comps) ? comps : [];
+        } catch(e) {
+          this.categoriesList = [];
+          this.companiesList = [];
+        }
+        
+        // Set default question
+        this.question = "Select a category to begin practicing interview questions";
+      },
+      
+      async choose(category) {
+        if (!category) return;
+        this.selectedCategory = category;
+        this.started = true;
+        this.questionIndex = 0;
+        await this.setCategoryOnServer(category);
+        await this.loadQuestion();
+      },
+      
+      async resetToCategories() {
+        this.started = false;
+        this.selectedCategory = '';
+        this.feedback = null;
+        this.feedbackData = null;
+        this.renderedFeedback = '';
+        this.answerText = '';
+        this.questionSaved = false;
+        this.questionIndex = 0;
+        try { clearInterval(this.timer); } catch(e){}
+        
+        // Clear cache
+        try {
+          await fetch('/clear_question_cache', { method: 'POST' });
+        } catch (e) {}
+      },
+      
+      async filterByCompany() {
+        try {
+          await fetch('/clear_question_cache', { method: 'POST' });
+          
+          if (this.started && this.selectedCategory) {
+            this.questionIndex = 0;
+            await this.setCategoryOnServer(this.selectedCategory, true);
+            await this.loadQuestion();
+          }
+        } catch (e) {
+          console.error('Filter error:', e);
+        }
+      },
+      
+      async setCategoryOnServer(cat, forceRefresh = false) {
+        try {
+          const payload = { category: cat };
+          if (this.selectedCompany) payload.company = this.selectedCompany;
+          if (forceRefresh) payload.force_refresh = true;
+          
+          await fetch('/set_category', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          console.warn('set_category failed', e);
+        }
+      },
+      
+      async loadQuestion() {
+        try {
+          console.log('Loading question with index:', this.questionIndex);
+          const res = await fetch('/get_mock_question?index=' + this.questionIndex);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.question) {
+              this.question = data.question;
+              this.questionSaved = false;
+              this.startTimer();
+              console.log('Question loaded:', this.question.substring(0, 50) + '...');
+            } else {
+              console.error('No question in response:', data);
+              this.question = `Explain a concept from ${this.selectedCategory}.`;
+              this.startTimer();
+            }
+          } else {
+            console.error('Failed to fetch question, status:', res.status);
+            this.question = `Explain a concept from ${this.selectedCategory}.`;
+            this.startTimer();
+          }
+        } catch (e) {
+          console.error('loadQuestion error:', e);
+          this.question = `Explain a concept from ${this.selectedCategory}.`;
+          this.questionSaved = false;
+          this.startTimer();
+        }
+      },
+      
+      startTimer() {
+        try { clearInterval(this.timer); } catch(e){}
+        this.timeLeft = 180;
+        this.progress = 0;
+        this.timer = setInterval(() => {
+          this.timeLeft--;
+          this.progress = Math.round(100 * (180 - this.timeLeft) / 180);
+          if (this.timeLeft <= 0) {
+            clearInterval(this.timer);
+            if (this.answerText && this.answerText.trim()) {
+              this.submitTextAnswer();
+            }
+          }
+        }, 1000);
+      },
+      
+      async submitTextAnswer() {
+        const msg = this.answerText.trim();
+        
+        // Validate minimum answer length
+        if (!msg) {
+          alert('Please type your answer before submitting.');
+          return;
+        }
+        
+        if (msg.length < 20) {
+          alert('Please provide a more detailed answer (at least 20 characters). Interview answers should be comprehensive.');
+          return;
+        }
+        
+        try { clearInterval(this.timer); } catch(e){}
+        
+        try {
+          const res = await fetch('/evaluate_answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+              question_text: this.question, 
+              answer: msg,
+              category: this.selectedCategory,
+              difficulty: this.currentDifficulty
+            })
+          });
+          
+          if (!res.ok) {
+            const chatRes = await fetch('/chat', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ message: msg })
+            });
+            const chatJson = await chatRes.json();
+            this.renderChatFallback(chatJson);
+            return;
+          }
+          
+          const js = await res.json();
+          const evalObj = js.evaluation || {};
+          
+          this.feedbackData = evalObj;
+          this.lastScore = evalObj.overall_score || evalObj.score || null;
+          
+          // Create feedback object for display
+          this.feedback = {
+            score: this.lastScore,
+            clarity: evalObj.dimensions?.communication || 8,
+            structure: evalObj.dimensions?.completeness || 8,
+            technical: evalObj.dimensions?.technical_accuracy || 8,
+            comments: this.formatFeedback(evalObj)
+          };
+          
+          this.updateDifficultyLevel(this.lastScore);
+          
+        } catch (err) {
+          console.error('submitTextAnswer error', err);
+          alert('Evaluation failed. Please try again.');
+        }
+      },
+      
+      formatFeedback(evalObj) {
+        let text = '';
+        if (evalObj.level) text += `${evalObj.level_emoji || ''} ${evalObj.level}\n\n`;
+        if (evalObj.strengths && evalObj.strengths.length) {
+          text += '✅ Strengths:\n' + evalObj.strengths.map(s => `• ${s}`).join('\n') + '\n\n';
+        }
+        if (evalObj.weaknesses && evalObj.weaknesses.length) {
+          text += '⚠️ Areas to Improve:\n' + evalObj.weaknesses.map(w => `• ${w}`).join('\n') + '\n\n';
+        }
+        if (evalObj.suggestions && evalObj.suggestions.length) {
+          text += '💡 Suggestions:\n' + evalObj.suggestions.map(s => `• ${s}`).join('\n');
+        }
+        return text || 'Feedback received.';
+      },
+      
+      updateDifficultyLevel(score) {
+        if (score === null || score === undefined) return;
+        
+        this.questionsAtLevel++;
+        this.difficultyScore += score;
+        
+        const avgScore = this.difficultyScore / this.questionsAtLevel;
+        const minQuestionsForPromotion = 3;
+        
+        if (this.questionsAtLevel >= minQuestionsForPromotion) {
+          if (this.currentDifficulty === 'beginner' && avgScore >= 7.0) {
+            this.currentDifficulty = 'intermediate';
+            this.questionsAtLevel = 0;
+            this.difficultyScore = 0;
+            alert('🎉 Promoted to INTERMEDIATE level!');
+            this.loadQuestionWithDifficulty();
+          } else if (this.currentDifficulty === 'intermediate' && avgScore >= 8.0) {
+            this.currentDifficulty = 'advanced';
+            this.questionsAtLevel = 0;
+            this.difficultyScore = 0;
+            alert('🔥 Promoted to ADVANCED level!');
+            this.loadQuestionWithDifficulty();
+          }
+        }
+      },
+      
+      async loadQuestionWithDifficulty() {
+        try {
+          const res = await fetch('/set_category', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+              category: this.selectedCategory,
+              difficulty: this.currentDifficulty,
+              force_refresh: true
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.next_question) {
+              this.question = data.next_question;
+              this.questionSaved = false;
+              this.startTimer();
+            }
+          }
+        } catch (e) {
+          console.warn('loadQuestionWithDifficulty failed', e);
+        }
+      },
+      
+      renderChatFallback(chatJson) {
+        let text = '';
+        if (chatJson.reply) text += chatJson.reply + '\n\n';
+        if (chatJson.score !== undefined && chatJson.score !== null) {
+          const roundedScore = Math.round(chatJson.score * 10) / 10;
+          text += `Score: ${roundedScore}/10`;
+          this.lastScore = roundedScore;
+        }
+        this.feedback = {
+          score: this.lastScore || 0,
+          clarity: 7,
+          structure: 7,
+          technical: 7,
+          comments: text || 'No feedback.'
+        };
+      },
+      
+      async nextQuestion() {
+        console.log('🔄 Next question clicked, current index:', this.questionIndex);
+        
+        // Clear current state
+        this.answerText = '';
+        this.feedback = null;
+        this.feedbackData = null;
+        this.renderedFeedback = '';
+        this.questionSaved = false;
+        
+        // Increment question index
+        this.questionIndex++;
+        console.log('📊 New index:', this.questionIndex);
+        
+        // Fetch new question
+        try {
+          const url = '/get_mock_question?index=' + this.questionIndex;
+          console.log('🌐 Fetching:', url);
+          
+          const res = await fetch(url);
+          console.log('📡 Response status:', res.status);
+          
+          if (res.ok) {
+            const data = await res.json();
+            console.log('📦 Response data:', data);
+            
+            if (data.question) {
+              const oldQuestion = this.question;
+              this.question = data.question;
+              
+              // Verify question actually changed
+              if (oldQuestion === this.question) {
+                console.warn('⚠️ WARNING: Question did not change!');
+                console.log('Old:', oldQuestion.substring(0, 80));
+                console.log('New:', this.question.substring(0, 80));
+              } else {
+                console.log('✅ New question loaded:', this.question.substring(0, 80) + '...');
+                if (data.total) {
+                  console.log(`📚 Question ${data.index + 1} of ${data.total}`);
+                }
+              }
+            } else {
+              console.error('❌ No question in response:', data);
+              this.question = `Explain a concept from ${this.selectedCategory}.`;
+            }
+          } else {
+            console.error('❌ Failed to fetch question, status:', res.status);
+            const errorText = await res.text();
+            console.error('Error details:', errorText);
+            this.question = `Explain a concept from ${this.selectedCategory}.`;
+          }
+          this.startTimer();
+        } catch (e) {
+          console.error('❌ Next question error:', e);
+          this.question = `Explain a concept from ${this.selectedCategory}.`;
+          this.startTimer();
+        }
+      },
+      
+      startSpeechToText() {
+        console.log('🎤 Mic button clicked, isListening:', this.isListening);
+        
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+          return;
+        }
+        
+        if (this.isListening) {
+          // Stop listening
+          console.log('🛑 Stopping speech recognition...');
+          if (this.recognition) {
+            this.recognition.stop();
+          }
+          this.isListening = false;
+          console.log('✅ Speech recognition stopped, isListening:', this.isListening);
+          return;
+        }
+        
+        // Start listening
+        console.log('▶️ Starting speech recognition...');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
+        
+        let finalTranscript = this.answerText || '';
+        
+        this.recognition.onstart = () => {
+          this.isListening = true;
+          console.log('✅ Speech recognition started, isListening:', this.isListening);
+        };
+        
+        this.recognition.onresult = (event) => {
+          let interimTranscript = '';
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' ';
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          this.answerText = finalTranscript + interimTranscript;
+        };
+        
+        this.recognition.onerror = (event) => {
+          console.error('❌ Speech recognition error:', event.error);
+          this.isListening = false;
+          if (event.error === 'no-speech') {
+            alert('No speech detected. Please try again.');
+          } else if (event.error === 'not-allowed') {
+            alert('Microphone access denied. Please allow microphone access.');
+          } else {
+            alert('Speech recognition error: ' + event.error);
+          }
+        };
+        
+        this.recognition.onend = () => {
+          this.isListening = false;
+          console.log('🏁 Speech recognition ended, isListening:', this.isListening);
+        };
+        
+        try {
+          this.recognition.start();
+        } catch (e) {
+          console.error('❌ Failed to start recognition:', e);
+          this.isListening = false;
+          alert('Failed to start speech recognition. Please try again.');
+        }
+      },
+      
+      async toggleRecording() {
+        if (!this.recording) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.audioStream = stream;
+            this.mediaRecorder = new MediaRecorder(stream);
+            const chunks = [];
+            
+            this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            this.mediaRecorder.onstop = async () => {
+              this.recordingBlob = new Blob(chunks, { type: 'audio/webm' });
+              await this.autoTranscribe();
+              if (this.audioStream) {
+                this.audioStream.getTracks().forEach(track => track.stop());
+              }
+            };
+            
+            this.mediaRecorder.start();
+            this.recording = true;
+          } catch (err) {
+            alert('Could not access microphone: ' + (err.message || err));
+            console.error('Recording error:', err);
+          }
+        } else {
+          if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            this.mediaRecorder.stop();
+            this.recording = false;
+          }
+        }
+      },
+      
+      async autoTranscribe() {
+        if (!this.recordingBlob) return;
+        
+        this.transcribing = true;
+        
+        try {
+          const fd = new FormData();
+          fd.append('file', this.recordingBlob, 'answer.webm');
+          
+          const response = await fetch('/transcribe', {
+            method: 'POST',
+            body: fd
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+          
+          if (data.transcription) {
+            this.answerText = data.transcription;
+            alert(`✅ Transcribed ${data.word_count || 0} words`);
+          } else {
+            alert('No speech detected');
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+          alert('Transcription failed: ' + err.message);
+        } finally {
+          this.transcribing = false;
+        }
+      },
+      
+      playQuestion() {
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(this.question);
+          window.speechSynthesis.speak(u);
+        } catch (e) {
+          console.warn('playQuestion failed', e);
+        }
+      },
+      
+      async saveQuestion() {
+        if (this.questionSaved || this.savingInProgress) {
+          console.log('⚠️ Question already saved or save in progress');
+          return;
+        }
+        
+        console.log('💾 Saving question...');
+        this.savingInProgress = true;
+        
+        try {
+          const payload = {
+            question: this.question,
+            category: this.selectedCategory,
+            company: this.selectedCompany || '',
+            notes: '',
+            tags: [],
+            difficulty: this.currentDifficulty,
+            priority: 0
+          };
+          
+          console.log('📤 Sending save request:', payload);
+          
+          const res = await fetch('/save_question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          console.log('📡 Save response status:', res.status);
+          
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('❌ Save failed:', errorText);
+            this.questionSaved = false;
+            this.savingInProgress = false;
+            alert('❌ Failed to save question. Please try again.');
+            return;
+          }
+          
+          const result = await res.json();
+          console.log('✅ Save result:', result);
+          
+          if (result.success) {
+            this.questionSaved = true;
+            alert('✅ Question saved to bookmarks!');
+          } else if (result.error) {
+            this.questionSaved = false;
+            alert('❌ Error: ' + result.error);
+          } else {
+            this.questionSaved = true;
+            alert('✅ Question saved successfully!');
+          }
+          
+          this.savingInProgress = false;
+        } catch (err) {
+          console.error('❌ saveQuestion error:', err);
+          this.questionSaved = false;
+          this.savingInProgress = false;
+          alert('❌ Network error. Please check your connection.');
+        }
+      },
+      
+      async loadTemplate() {
+        this.showTemplate = true;
+        this.loadingTemplate = true;
+        this.template = null;
+        
+        try {
+          const res = await fetch(`/api/templates/question?question=${encodeURIComponent(this.question)}`);
+          const data = await res.json();
+          
+          if (data.success && data.template) {
+            this.template = data.template;
+            console.log('✅ Template loaded');
+          } else {
+            this.template = null;
+            console.log('⚠️ No template found for this question');
+          }
+        } catch (err) {
+          console.error('Template load error:', err);
+          this.template = null;
+          alert('Failed to load template');
+        } finally {
+          this.loadingTemplate = false;
+        }
+      },
+      
+      useTemplate() {
+        if (!this.template || !this.template.structure) {
+          alert('No template structure available');
+          return;
+        }
+        
+        // Pre-fill answer box with structure
+        const structureText = this.template.structure.map((item, index) => {
+          return `[${item}]\n\n`;
+        }).join('');
+        
+        this.answerText = structureText;
+        this.showTemplate = false;
+        
+        alert('✅ Template structure added to answer box');
+        
+        // Focus on answer textarea
+        setTimeout(() => {
+          const textarea = document.querySelector('textarea');
+          if (textarea) {
+            textarea.focus();
+            textarea.setSelectionRange(0, 0);
+          }
+        }, 100);
+      }
+    };
+  }
+</script>
+{% endblock %}

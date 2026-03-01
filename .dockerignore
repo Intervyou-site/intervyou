@@ -1,67 +1,70 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-.venv/
-env/
-ENV/
+# Git and version control
+.git
+.gitignore
+.gitlab-ci.yml
 
-# Environment files (will be passed via docker-compose)
-.env
-.env.local
-.env.*.local
+# Documentation
+README.md
+CODE_CLEANUP_SUMMARY.md
+*.md
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-database.db
-backup/
-
-# IDE
+# Development files
 .vscode/
 .idea/
-*.swp
-*.swo
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+.env.dev
+.env.example
 
-# OS
+# Notebooks and analysis
+notebooks/
+*.ipynb
+swark-output/
+
+# Logs and temporary files
+*.log
+*.tmp
 .DS_Store
 Thumbs.db
 
-# Git
-.git/
-.gitignore
-
-# Logs
-*.log
-logs/
-app-logs/
-app-logs-new/
-*.zip
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Build
-dist/
+# Build artifacts
 build/
+dist/
 *.egg-info/
 
-# Temporary
-*.tmp
+# Old application files (keep only cleaned version)
+fastapi_app.py
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Backup files
+backup/
 *.bak
-swark-output/
+*.backup
 
-# Documentation
-*.md
-!README.md
+# Large model files (download at runtime if needed)
+models/
+*.bin
+*.safetensors
 
-# Docker
+# Development dependencies
+requirements-dev.txt
+
+# Docker files (not needed inside container)
 Dockerfile
-docker-compose.yml
+docker-compose*.yml
 .dockerignore
+
+# Environment files (use docker-compose env instead)
+.env
+.env.local
+.env.production
+
+# Cache directories
+.cache/
+node_modules/

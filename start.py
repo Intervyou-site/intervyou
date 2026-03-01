@@ -44,9 +44,13 @@ def check_env_file():
 def check_dependencies():
     """Check if required packages are installed"""
     try:
+        print("Checking core dependencies...")
         import fastapi
+        print("  ✅ FastAPI")
         import uvicorn
+        print("  ✅ Uvicorn")
         import sqlalchemy
+        print("  ✅ SQLAlchemy")
         print("✅ Core dependencies installed")
         return True
     except ImportError as e:
@@ -58,12 +62,82 @@ def initialize_database():
     """Initialize the database"""
     try:
         print("Initializing database...")
-        from fastapi_app import Base, engine
+        
+        # Check if database file exists and is accessible
+        db_path = "database.db"
+        if os.path.exists(db_path):
+            print(f"✅ Database file exists: {db_path}")
+        else:
+            print(f"📝 Creating new database: {db_path}")
+        
+        # Create a minimal database setup without importing the full app
+        # This avoids the FeatureFlags initialization that can hang
+        import sqlalchemy
+        from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey
+        from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+        from datetime import datetime
+        
+        # Database configuration
+        DATABASE_URL = f"sqlite:///{db_path}"
+        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+        Base = declarative_base()
+        
+        # Define minimal models
+        class User(Base):
+            __tablename__ = "user"
+            id = Column(Integer, primary_key=True)
+            name = Column(String(100), nullable=False)
+            email = Column(String(100), unique=True, nullable=False)
+            password = Column(String(200), nullable=False)
+            total_score = Column(Float, default=0.0)
+            attempts = Column(Integer, default=0)
+            badge = Column(String(100), default="🎯 Rising Learner")
+
+        class Attempt(Base):
+            __tablename__ = "attempt"
+            id = Column(Integer, primary_key=True)
+            user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+            question = Column(String(500))
+            score = Column(Float)
+            feedback = Column(Text)
+            timestamp = Column(DateTime, default=datetime.utcnow)
+
+        class SavedQuestion(Base):
+            __tablename__ = "saved_question"
+            id = Column(Integer, primary_key=True)
+            user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+            question = Column(String(500), nullable=False)
+            company = Column(String(100), nullable=True)
+            timestamp = Column(DateTime, default=datetime.utcnow)
+        
+        # Create tables
         Base.metadata.create_all(bind=engine)
+        print("✅ Database tables created")
+        
+        # Test connection
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        try:
+            # Simple test query
+            session.execute(sqlalchemy.text("SELECT 1"))
+            session.commit()
+            print("✅ Database connection verified")
+        finally:
+            session.close()
+        
         print("✅ Database initialized")
         return True
+        
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
+        print(f"   Error type: {type(e).__name__}")
+        
+        # Provide helpful suggestions
+        if "locked" in str(e).lower():
+            print("   💡 Suggestion: Close any database browsers or other connections")
+        elif "permission" in str(e).lower():
+            print("   💡 Suggestion: Check file permissions in the current directory")
+        
         return False
 
 def check_api_keys():
@@ -99,7 +173,7 @@ def start_server():
     try:
         subprocess.run([
             sys.executable, "-m", "uvicorn",
-            "fastapi_app:app",
+            "fastapi_app_cleaned:app",
             "--reload",
             "--host", "0.0.0.0",
             "--port", "8000"

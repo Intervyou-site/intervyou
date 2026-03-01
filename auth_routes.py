@@ -18,7 +18,7 @@ router = APIRouter()
 
 # Helper to get DB session (will be injected from main app)
 def get_db():
-    from fastapi_app import SessionLocal
+    from fastapi_app_cleaned import SessionLocal
     db = SessionLocal()
     try:
         yield db
@@ -26,7 +26,7 @@ def get_db():
         db.close()
 
 def get_current_user(request: Request, db):
-    from fastapi_app import User
+    from fastapi_app_cleaned import User
     uid = request.session.get("user_id")
     if not uid:
         return None
@@ -50,7 +50,7 @@ async def google_login(request: Request):
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     """Handle Google OAuth callback"""
-    from fastapi_app import User, get_password_hash
+    from fastapi_app_cleaned import User, get_password_hash
     
     try:
         token = await oauth.google.authorize_access_token(request)
@@ -107,14 +107,14 @@ def generate_otp(length=6):
 @router.get("/forgot_password")
 async def forgot_password_page(request: Request):
     """Display forgot password form"""
-    from fastapi_app import templates
+    from fastapi_app_cleaned import templates
     return templates.TemplateResponse("forgot_password.html", {"request": request})
 
 
 @router.get("/forgot_password/verify")
 async def forgot_password_verify_page(request: Request):
     """Display OTP verification form"""
-    from fastapi_app import templates
+    from fastapi_app_cleaned import templates
     return templates.TemplateResponse("forgot_password_verify.html", {"request": request})
 
 
@@ -126,7 +126,7 @@ async def request_password_reset_otp(
     db: Session = Depends(get_db)
 ):
     """Request OTP for password reset"""
-    from fastapi_app import User
+    from fastapi_app_cleaned import User
     
     email = email.strip().lower()
     
@@ -165,7 +165,7 @@ async def verify_otp_and_reset(
     db: Session = Depends(get_db)
 ):
     """Verify OTP and reset password"""
-    from fastapi_app import User, get_password_hash
+    from fastapi_app_cleaned import User, get_password_hash
     
     email = email.strip().lower()
     otp = otp.strip()

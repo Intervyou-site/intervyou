@@ -1,0 +1,323 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Reports - IntervYou{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .stat-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+  }
+  
+  .stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  
+  .stat-subtext {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: var(--spacing-sm);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Performance Reports</h1>
+  <p class="page-subtitle">Track your progress and identify areas for improvement</p>
+</div>
+
+<!-- Metrics Grid -->
+<div class="grid-4" style="margin-bottom: var(--spacing-2xl);">
+  <div class="stat-card">
+    <div class="stat-label">Total Attempts</div>
+    <div class="stat-value">{{ attempts|length if attempts else 0 }}</div>
+    <div class="stat-subtext">Practice sessions completed</div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-label">Average Score</div>
+    <div class="stat-value">{{ "%.1f"|format(average) if average else "0.0" }}</div>
+    <div class="stat-subtext">Out of 10</div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-label">Best Score</div>
+    <div class="stat-value">{{ "%.1f"|format(best_score) if best_score else "0.0" }}</div>
+    <div class="stat-subtext">Personal record</div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-label">Current Streak</div>
+    <div class="stat-value">{{ streak if streak else 0 }}</div>
+    <div class="stat-subtext">Days in a row</div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid-2" style="margin-bottom: var(--spacing-2xl);">
+  <!-- Recent Performance Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Recent Performance</h3>
+      <p class="card-subtitle">Your score trend over the last {{ attempts|length if attempts else 0 }} attempts</p>
+    </div>
+    <div>
+      <canvas id="performanceChart" height="200"></canvas>
+    </div>
+  </div>
+  
+  <!-- Category Breakdown Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Category Performance</h3>
+      <p class="card-subtitle">Average scores by question category</p>
+    </div>
+    <div>
+      {% if category_labels and category_scores %}
+        <canvas id="categoryChart" height="200"></canvas>
+      {% else %}
+        <div style="padding: 3rem; text-align: center; color: var(--text-tertiary);">
+          <svg style="width: 64px; height: 64px; margin: 0 auto 1rem; opacity: 0.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <p style="font-size: 14px;">No category data available yet</p>
+          <p style="font-size: 13px; margin-top: 0.5rem;">Practice across different categories to see your breakdown</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Insights Section -->
+<div class="grid-3">
+  <!-- Strengths -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Strengths</h3>
+      <p class="card-subtitle">What you're doing well</p>
+    </div>
+    <div>
+      {% if strengths %}
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          {% for strength in strengths %}
+            <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-primary); display: flex; align-items: start; gap: var(--spacing-sm);">
+              <svg style="width: 20px; height: 20px; color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span style="font-size: 14px; color: var(--text-primary);">{{ strength }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="font-size: 14px; color: var(--text-tertiary); text-align: center; padding: 2rem;">Complete more practice sessions to identify your strengths</p>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Areas to Improve -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Areas to Improve</h3>
+      <p class="card-subtitle">Focus areas for growth</p>
+    </div>
+    <div>
+      {% if weaknesses %}
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          {% for weakness in weaknesses %}
+            <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-primary); display: flex; align-items: start; gap: var(--spacing-sm);">
+              <svg style="width: 20px; height: 20px; color: var(--warning); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span style="font-size: 14px; color: var(--text-primary);">{{ weakness }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="font-size: 14px; color: var(--text-tertiary); text-align: center; padding: 2rem;">Complete more practice sessions to identify improvement areas</p>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- AI Recommendations -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">AI Recommendations</h3>
+      <p class="card-subtitle">Personalized next steps</p>
+    </div>
+    <div>
+      {% if recommendation %}
+        <div style="padding: var(--spacing-md); background-color: var(--accent-light); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
+          <p style="font-size: 14px; color: var(--text-primary); line-height: 1.6;">{{ recommendation }}</p>
+        </div>
+      {% endif %}
+      
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+        <a href="/practice" class="btn btn-primary" style="width: 100%;">Continue Practicing</a>
+        <a href="/advisor" class="btn btn-secondary" style="width: 100%;">View Learning Plan</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Remark Section -->
+{% if remark %}
+<div class="card" style="margin-top: var(--spacing-2xl); background: linear-gradient(135deg, var(--accent-light), var(--bg-primary));">
+  <div style="display: flex; align-items: start; gap: var(--spacing-lg);">
+    <svg style="width: 48px; height: 48px; color: var(--accent-primary); flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+    </svg>
+    <div>
+      <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-sm);">Performance Summary</h3>
+      <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6;">{{ remark }}</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function pageInit() {
+    // Initialize charts after page load
+    setTimeout(() => {
+      initCharts();
+    }, 100);
+  }
+  
+  function initCharts() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#9CA3AF' : '#6B7280';
+    const gridColor = isDark ? '#1F2937' : '#E5E7EB';
+    
+    // Performance Chart
+    const perfCtx = document.getElementById('performanceChart');
+    if (perfCtx) {
+      const attempts = {{ attempts|tojson if attempts else '[]' }};
+      const labels = attempts.map((_, i) => `Attempt ${i + 1}`);
+      const scores = attempts.map(a => a.score || 0);
+      
+      new Chart(perfCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Score',
+            data: scores,
+            borderColor: '#2563EB',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 10,
+              ticks: {
+                color: textColor
+              },
+              grid: {
+                color: gridColor
+              }
+            },
+            x: {
+              ticks: {
+                color: textColor
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Category Chart
+    const catCtx = document.getElementById('categoryChart');
+    if (catCtx) {
+      const labels = {{ category_labels|tojson if category_labels else '[]' }};
+      const scores = {{ category_scores|tojson if category_scores else '[]' }};
+      
+      if (labels.length > 0) {
+        new Chart(catCtx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Average Score',
+              data: scores,
+              backgroundColor: '#2563EB',
+              borderRadius: 6,
+              barThickness: 40
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 10,
+                ticks: {
+                  color: textColor
+                },
+                grid: {
+                  color: gridColor
+                }
+              },
+              x: {
+                ticks: {
+                  color: textColor
+                },
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+  }
+</script>
+{% endblock %}

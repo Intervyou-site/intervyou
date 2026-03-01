@@ -1,0 +1,266 @@
+{% extends "base_layout.html" %}
+
+{% block title %}AI Advisor - IntervYou{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Icon size utilities */
+  .w-4 { width: 16px; }
+  .h-4 { height: 16px; }
+  .w-5 { width: 20px; }
+  .h-5 { height: 20px; }
+  .w-6 { width: 24px; }
+  .h-6 { height: 24px; }
+  
+  .insight-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+  }
+  
+  .insight-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .insight-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .icon-success {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+  }
+  
+  .icon-warning {
+    background-color: rgba(234, 179, 8, 0.1);
+    color: var(--warning);
+  }
+  
+  .icon-info {
+    background-color: rgba(37, 99, 235, 0.1);
+    color: var(--accent-primary);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">AI Career Advisor</h1>
+  <p class="page-subtitle">Personalized guidance to accelerate your interview preparation</p>
+</div>
+
+<!-- Key Insights Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+  <div class="insight-card">
+    <div class="insight-icon icon-success">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-xs);">Your Strengths</h3>
+    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--spacing-md);">
+      Complete practice sessions to discover your strongest areas
+    </p>
+    <a href="/practice" class="btn btn-sm btn-secondary">Start Practicing</a>
+  </div>
+  
+  <div class="insight-card">
+    <div class="insight-icon icon-warning">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+      </svg>
+    </div>
+    <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-xs);">Growth Areas</h3>
+    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--spacing-md);">
+      AI will identify areas where you can improve most
+    </p>
+    <a href="/report" class="btn btn-sm btn-secondary">View Analytics</a>
+  </div>
+  
+  <div class="insight-card">
+    <div class="insight-icon icon-info">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+    </div>
+    <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-xs);">Smart Recommendations</h3>
+    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--spacing-md);">
+      Get personalized learning paths based on your performance
+    </p>
+    <a href="/analytics" class="btn btn-sm btn-secondary">See Insights</a>
+  </div>
+</div>
+
+<!-- Recommended Actions -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+  <div class="card-header">
+    <h3 class="card-title">Recommended Actions</h3>
+    <p class="card-subtitle">Start with these high-impact activities</p>
+  </div>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-lg);">
+    <div>
+      <h4 style="font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--spacing-md);">This Week</h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+        <div style="display: flex; align-items: start; gap: var(--spacing-sm); padding: var(--spacing-sm); border-radius: var(--radius-md); transition: background-color 0.15s;">
+          <svg class="w-5 h-5" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Complete 10 practice questions</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">Build consistency and track progress</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: start; gap: var(--spacing-sm); padding: var(--spacing-sm); border-radius: var(--radius-md);">
+          <svg class="w-5 h-5" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Record 2 video responses</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">Practice body language and delivery</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: start; gap: var(--spacing-sm); padding: var(--spacing-sm); border-radius: var(--radius-md);">
+          <svg class="w-5 h-5" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Review your analytics</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">Identify patterns and trends</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div>
+      <h4 style="font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--spacing-md);">This Month</h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+        <div style="display: flex; align-items: start; gap: var(--spacing-sm); padding: var(--spacing-sm); border-radius: var(--radius-md);">
+          <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Master STAR method</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">Structure behavioral responses effectively</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: start; gap: var(--spacing-sm); padding: var(--spacing-sm); border-radius: var(--radius-md);">
+          <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Optimize your resume</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">Improve ATS score and formatting</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: start; gap: var(--spacing-sm); padding: var(--spacing-sm); border-radius: var(--radius-md);">
+          <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Check the leaderboard</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">See how you compare with peers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Learning Resources -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-lg);">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Quick Links</h3>
+      <p class="card-subtitle">Access key features</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
+      <a href="/practice" class="btn btn-ghost" style="justify-content: space-between;">
+        <span>Practice Questions</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <a href="/video_interview" class="btn btn-ghost" style="justify-content: space-between;">
+        <span>Video Interview</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <a href="/report" class="btn btn-ghost" style="justify-content: space-between;">
+        <span>Performance Report</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <a href="/bookmarks" class="btn btn-ghost" style="justify-content: space-between;">
+        <span>Saved Questions</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Pro Tips</h3>
+      <p class="card-subtitle">Expert interview advice</p>
+    </div>
+    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--spacing-sm);">
+      <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: start; gap: var(--spacing-sm);">
+        <svg class="w-4 h-4" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>Practice consistently, not intensively</span>
+      </li>
+      <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: start; gap: var(--spacing-sm);">
+        <svg class="w-4 h-4" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>Review AI feedback after each session</span>
+      </li>
+      <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: start; gap: var(--spacing-sm);">
+        <svg class="w-4 h-4" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>Simulate real interview conditions</span>
+      </li>
+      <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: start; gap: var(--spacing-sm);">
+        <svg class="w-4 h-4" style="color: var(--accent-primary); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>Track progress with analytics</span>
+      </li>
+    </ul>
+  </div>
+  
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Next Steps</h3>
+      <p class="card-subtitle">Continue your journey</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+      <div>
+        <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Current Focus</div>
+        <div style="font-size: 14px; color: var(--text-primary);">Build practice consistency</div>
+      </div>
+      <div>
+        <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Goal This Week</div>
+        <div style="font-size: 14px; color: var(--text-primary);">Complete 10 questions</div>
+      </div>
+      <a href="/practice" class="btn btn-primary">Start Practicing</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

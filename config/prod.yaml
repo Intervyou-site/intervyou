@@ -1,0 +1,22 @@
+# Production configuration
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  name: ${DB_NAME}
+  
+api:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+
+ml_models:
+  xlnet_model: "xlnet-base-cased"
+  huggingface_cache: "/app/models"
+  
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+security:
+  cors_origins: ${CORS_ORIGINS}
+  secret_key: ${SECRET_KEY}

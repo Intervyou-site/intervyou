@@ -1,0 +1,278 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Analytics - IntervYou{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .metric-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+  }
+  
+  .metric-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .metric-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .metric-change {
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .metric-change.positive {
+    color: var(--success);
+  }
+  
+  .metric-change.negative {
+    color: var(--danger);
+  }
+  
+  .chart-container {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Analytics Dashboard</h1>
+  <p class="page-subtitle">Detailed insights into your interview performance</p>
+</div>
+
+<div class="analytics-grid">
+  <div class="metric-card">
+    <div class="metric-label">Total Practice Sessions</div>
+    <div class="metric-value" id="totalSessions">0</div>
+    <div class="metric-change positive">
+      <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+      </svg>
+      <span id="sessionsChange">+0%</span> from last week
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-label">Average Score</div>
+    <div class="metric-value" id="avgScore">0.0</div>
+    <div class="metric-change positive">
+      <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+      </svg>
+      <span id="scoreChange">+0%</span> improvement
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-label">Best Category</div>
+    <div class="metric-value" style="font-size: 24px;" id="bestCategory">-</div>
+    <div style="font-size: 13px; color: var(--text-tertiary);">
+      <span id="bestCategoryScore">0.0</span> avg score
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-label">Practice Streak</div>
+    <div class="metric-value" id="streak">0</div>
+    <div style="font-size: 13px; color: var(--text-tertiary);">
+      days in a row
+    </div>
+  </div>
+</div>
+
+<div class="chart-container">
+  <h3 class="chart-title">Performance Over Time</h3>
+  <canvas id="performanceChart"></canvas>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+  <div class="chart-container">
+    <h3 class="chart-title">Category Breakdown</h3>
+    <canvas id="categoryChart"></canvas>
+  </div>
+  
+  <div class="chart-container">
+    <h3 class="chart-title">Score Distribution</h3>
+    <canvas id="distributionChart"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title">Recent Activity</h3>
+  <div id="recentActivity">
+    <p style="text-align: center; color: var(--text-tertiary); padding: var(--spacing-xl);">Loading activity...</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Fetch analytics data
+async function loadAnalytics() {
+  try {
+    const response = await fetch('/api/analytics');
+    const data = await response.json();
+    
+    // Update metrics
+    document.getElementById('totalSessions').textContent = data.total_sessions || 0;
+    document.getElementById('avgScore').textContent = (data.average_score || 0).toFixed(1);
+    document.getElementById('bestCategory').textContent = data.best_category || '-';
+    document.getElementById('bestCategoryScore').textContent = (data.best_category_score || 0).toFixed(1);
+    document.getElementById('streak').textContent = data.streak || 0;
+    document.getElementById('sessionsChange').textContent = `+${data.sessions_change || 0}%`;
+    document.getElementById('scoreChange').textContent = `+${data.score_change || 0}%`;
+    
+    // Performance over time chart
+    const perfCtx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(perfCtx, {
+      type: 'line',
+      data: {
+        labels: data.dates || [],
+        datasets: [{
+          label: 'Score',
+          data: data.scores || [],
+          borderColor: 'rgb(37, 99, 235)',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 10
+          }
+        }
+      }
+    });
+    
+    // Category breakdown chart
+    const catCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(catCtx, {
+      type: 'doughnut',
+      data: {
+        labels: data.categories || [],
+        datasets: [{
+          data: data.category_counts || [],
+          backgroundColor: [
+            'rgb(37, 99, 235)',
+            'rgb(34, 197, 94)',
+            'rgb(234, 179, 8)',
+            'rgb(239, 68, 68)',
+            'rgb(168, 85, 247)'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+    
+    // Score distribution chart
+    const distCtx = document.getElementById('distributionChart').getContext('2d');
+    new Chart(distCtx, {
+      type: 'bar',
+      data: {
+        labels: ['0-2', '2-4', '4-6', '6-8', '8-10'],
+        datasets: [{
+          label: 'Attempts',
+          data: data.score_distribution || [0, 0, 0, 0, 0],
+          backgroundColor: 'rgb(37, 99, 235)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          }
+        }
+      }
+    });
+    
+    // Recent activity
+    const activityHtml = (data.recent_activity || []).map(activity => `
+      <div style="padding: var(--spacing-md); border-bottom: 1px solid var(--border-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 4px;">${activity.category}</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">${activity.date}</div>
+          </div>
+          <span class="badge badge-${activity.score >= 7 ? 'success' : activity.score >= 5 ? 'warning' : 'danger'}">
+            ${activity.score.toFixed(1)}
+          </span>
+        </div>
+      </div>
+    `).join('');
+    
+    document.getElementById('recentActivity').innerHTML = activityHtml || '<p style="text-align: center; color: var(--text-tertiary); padding: var(--spacing-xl);">No recent activity</p>';
+    
+  } catch (err) {
+    console.error('Error loading analytics:', err);
+  }
+}
+
+// Load analytics on page load
+loadAnalytics();
+</script>
+{% endblock %}

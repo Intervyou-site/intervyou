@@ -1,0 +1,744 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Video Interview - IntervYou{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Icon size utilities */
+  .w-4 { width: 16px; }
+  .h-4 { height: 16px; }
+  .w-5 { width: 20px; }
+  .h-5 { height: 20px; }
+  .w-6 { width: 24px; }
+  .h-6 { height: 24px; }
+  .w-24 { width: 96px; }
+  .h-24 { height: 96px; }
+  
+  .video-container {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .video-preview {
+    width: 100%;
+    max-width: 800px;
+    aspect-ratio: 16/9;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-lg);
+    border: 2px solid var(--border-primary);
+  }
+  
+  .video-preview video {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-md);
+  }
+  
+  .question-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .question-text {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+  }
+  
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+  }
+  
+  .timer-display {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    text-align: center;
+    margin: var(--spacing-lg) 0;
+  }
+  
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .status-recording {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+  }
+  
+  .status-ready {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22C55E;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="videoInterviewPage()" x-init="init()">
+<div class="page-header">
+  <h1 class="page-title">Video Interview Practice</h1>
+  <p class="page-subtitle">Practice with AI-powered video analysis and feedback</p>
+</div>
+
+<!-- AI Interviewer Section -->
+<div class="card" style="margin-bottom: var(--spacing-2xl);">
+  <div style="display: flex; align-items: center; gap: var(--spacing-xl); padding: var(--spacing-lg);">
+    <!-- AI Avatar -->
+    <div style="flex-shrink: 0;">
+      <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), #1D4ED8); display: flex; align-items: center; justify-content: center; font-size: 60px; position: relative; box-shadow: var(--shadow-lg);"
+           :class="{'animate-pulse': aiSpeaking}">
+        👩‍💼
+        <div x-show="aiSpeaking" style="position: absolute; bottom: 0; right: 0; width: 30px; height: 30px; background-color: var(--success); border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center;">
+          <svg class="w-4 h-4" style="color: white;" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    
+    <!-- AI Info -->
+    <div style="flex: 1;">
+      <h3 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--spacing-xs);">Sarah AI</h3>
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: var(--spacing-md);">Your AI Interview Assistant</p>
+      
+      <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+        <span class="status-indicator" :class="aiSpeaking ? 'status-recording' : 'status-ready'">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="5"/>
+          </svg>
+          <span x-text="aiSpeaking ? 'Speaking...' : (recording ? 'Listening...' : (processing ? 'Analyzing...' : 'Ready'))"></span>
+        </span>
+      </div>
+      
+      <div style="display: flex; gap: var(--spacing-sm);">
+        <button x-show="!interviewStarted && !aiSpeaking" @click="startInterview()" class="btn btn-primary">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Start Interview
+        </button>
+        
+        <button x-show="interviewStarted && !aiSpeaking && !recording" @click="playQuestionAudio()" class="btn btn-secondary">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+          </svg>
+          Hear Question Again
+        </button>
+        
+        <button @click="stopQuestionAudio()" x-show="aiSpeaking" class="btn btn-secondary">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Pause
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="video-container">
+  <div class="video-preview" id="videoPreview">
+    <video id="videoElement" autoplay muted></video>
+    <div id="videoPlaceholder" style="text-align: center; color: var(--text-tertiary);">
+      <svg class="w-24 h-24" style="margin: 0 auto var(--spacing-md);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+      <p>Click "Start Camera" to begin</p>
+    </div>
+  </div>
+  
+  <div style="text-align: center; margin-bottom: var(--spacing-lg);">
+    <span class="status-indicator" :class="recording ? 'status-recording' : 'status-ready'" id="statusIndicator">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="5"/>
+      </svg>
+      <span x-text="recording ? 'Recording...' : (processing ? 'Analyzing...' : 'Ready')"></span>
+    </span>
+  </div>
+  
+  <div class="timer-display" id="timerDisplay" x-text="recordingTime">00:00</div>
+  
+  <div class="controls-grid">
+    <button class="btn btn-primary" x-show="!stream" @click="setupCamera()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+      Start Camera
+    </button>
+    
+    <button class="btn btn-success" x-show="stream && !recording && !videoBlob" @click="startRecording()">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="8"/>
+      </svg>
+      Start Recording
+    </button>
+    
+    <button class="btn btn-danger" x-show="recording" @click="stopRecording()">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <rect x="6" y="6" width="8" height="8"/>
+      </svg>
+      Stop Recording
+    </button>
+    
+    <button class="btn btn-secondary" x-show="videoBlob && !processing" @click="retakeVideo()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Retake
+    </button>
+    
+    <button class="btn btn-primary" x-show="videoBlob && !processing" @click="uploadVideo()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+      </svg>
+      Analyze Interview
+    </button>
+    
+    <button class="btn btn-secondary" @click="getNewQuestion(false)">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      New Question
+    </button>
+  </div>
+</div>
+
+<!-- Analysis Results Section -->
+<div x-show="analysisComplete" x-cloak class="card" style="margin-bottom: var(--spacing-2xl);">
+  <div class="card-header">
+    <h3 class="card-title">Interview Analysis Results</h3>
+    <p class="card-subtitle">Comprehensive AI-powered feedback on your performance</p>
+  </div>
+  
+  <!-- Score Cards -->
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+    <div style="background: linear-gradient(135deg, #6366F1, #4F46E5); padding: var(--spacing-lg); border-radius: var(--radius-lg); color: white; text-align: center;">
+      <div style="font-size: 36px; font-weight: 700; margin-bottom: var(--spacing-xs);" x-text="detailedAnalysis?.confidence_score || score || '—'"></div>
+      <div style="font-size: 13px; opacity: 0.9;">Confidence</div>
+    </div>
+    <div style="background: linear-gradient(135deg, #0EA5E9, #0284C7); padding: var(--spacing-lg); border-radius: var(--radius-lg); color: white; text-align: center;">
+      <div style="font-size: 36px; font-weight: 700; margin-bottom: var(--spacing-xs);" x-text="detailedAnalysis?.professionalism_score || '—'"></div>
+      <div style="font-size: 13px; opacity: 0.9;">Professionalism</div>
+    </div>
+    <div style="background: linear-gradient(135deg, #10B981, #059669); padding: var(--spacing-lg); border-radius: var(--radius-lg); color: white; text-align: center;">
+      <div style="font-size: 36px; font-weight: 700; margin-bottom: var(--spacing-xs);" x-text="detailedAnalysis?.engagement_score || '—'"></div>
+      <div style="font-size: 13px; opacity: 0.9;">Engagement</div>
+    </div>
+    <div style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); padding: var(--spacing-lg); border-radius: var(--radius-lg); color: white; text-align: center;">
+      <div style="font-size: 36px; font-weight: 700; margin-bottom: var(--spacing-xs);" x-text="score || '—'"></div>
+      <div style="font-size: 13px; opacity: 0.9;">Overall Score</div>
+    </div>
+  </div>
+  
+  <!-- Detailed Feedback -->
+  <div style="background-color: var(--bg-secondary); padding: var(--spacing-xl); border-radius: var(--radius-lg); margin-bottom: var(--spacing-xl);">
+    <h4 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      AI Analysis Report
+    </h4>
+    <pre style="white-space: pre-wrap; font-family: inherit; font-size: 14px; color: var(--text-secondary); line-height: 1.6;" x-text="feedback"></pre>
+  </div>
+  
+  <!-- Enhanced Metrics Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+    <!-- Eye Tracking -->
+    <div x-show="detailedAnalysis?.eye_tracking" class="card">
+      <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+        <span style="font-size: 20px;">👁️</span> Eye Tracking
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm); font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Eye Contact:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="(detailedAnalysis?.eye_tracking?.eye_contact_percentage || 0) + '%'"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Blink Rate:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="(detailedAnalysis?.eye_tracking?.blink_rate || 0).toFixed(1) + '/min'"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Gaze Stability:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="((detailedAnalysis?.eye_tracking?.gaze_stability || 0) * 100).toFixed(0) + '%'"></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Voice Analysis -->
+    <div x-show="detailedAnalysis?.voice_analysis" class="card">
+      <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+        <span style="font-size: 20px;">🎤</span> Voice Analysis
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm); font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Speech Rate:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="(detailedAnalysis?.voice_analysis?.speech_rate || 0) + ' wpm'"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Clarity:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="((detailedAnalysis?.voice_analysis?.clarity_score || 0) * 100).toFixed(0) + '%'"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Filler Words:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="detailedAnalysis?.voice_analysis?.total_filler_count || 0"></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Attention Metrics -->
+    <div x-show="detailedAnalysis?.attention_metrics" class="card">
+      <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+        <span style="font-size: 20px;">🎯</span> Attention & Focus
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm); font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Focus:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="(detailedAnalysis?.attention_metrics?.focus_percentage || 0) + '%'"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Distractions:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="detailedAnalysis?.attention_metrics?.distraction_count || 0"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Head Stability:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="((detailedAnalysis?.attention_metrics?.head_pose_stability || 0) * 100).toFixed(0) + '%'"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Emotion & Sentiment -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-lg);">
+    <div class="card">
+      <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+        <span style="font-size: 20px;">😊</span> Emotion Analysis
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm); font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Dominant Emotion:</span>
+          <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize;" x-text="detailedAnalysis?.emotions?.dominant_emotion || 'N/A'"></span>
+        </div>
+        <div x-show="detailedAnalysis?.authenticity_score" style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Authenticity:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="(detailedAnalysis?.authenticity_score || 0) + '/10'"></span>
+        </div>
+      </div>
+    </div>
+    
+    <div x-show="detailedAnalysis?.sentiment" class="card">
+      <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+        <span style="font-size: 20px;">💭</span> Sentiment Analysis
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm); font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Sentiment:</span>
+          <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize;" x-text="detailedAnalysis?.sentiment?.label || 'N/A'"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Polarity:</span>
+          <span style="font-weight: 600; color: var(--text-primary);" x-text="detailedAnalysis?.sentiment?.polarity || 'N/A'"></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Transcription -->
+    <div x-show="detailedAnalysis?.transcription" class="card" style="grid-column: 1 / -1;">
+      <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+        <span style="font-size: 20px;">📝</span> Transcription
+      </h4>
+      <p style="font-size: 13px; color: var(--text-secondary); font-style: italic; line-height: 1.6;" x-text="detailedAnalysis?.transcription"></p>
+    </div>
+  </div>
+</div>
+
+<div class="question-card">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-md);">
+    <h2 style="font-size: 16px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Current Question</h2>
+    <span class="badge badge-primary">Behavioral</span>
+  </div>
+  <p class="question-text" x-text="currentQuestion"></p>
+  
+  <div style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-primary);">
+    <div style="display: flex; gap: var(--spacing-sm);">
+      <button @click="getNewQuestion(false)" class="btn btn-secondary btn-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        New Question
+      </button>
+      <button @click="getNewQuestion(true)" class="btn btn-primary btn-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        AI Question
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title">Tips for Video Interview</h3>
+  <ul style="list-style: none; padding: 0; margin: 0;">
+    <li style="padding: var(--spacing-sm) 0; display: flex; align-items: start; gap: var(--spacing-sm);">
+      <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span style="color: var(--text-secondary); font-size: 14px;">Maintain eye contact with the camera</span>
+    </li>
+    <li style="padding: var(--spacing-sm) 0; display: flex; align-items: start; gap: var(--spacing-sm);">
+      <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span style="color: var(--text-secondary); font-size: 14px;">Speak clearly and at a moderate pace</span>
+    </li>
+    <li style="padding: var(--spacing-sm) 0; display: flex; align-items: start; gap: var(--spacing-sm);">
+      <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span style="color: var(--text-secondary); font-size: 14px;">Use the STAR method for behavioral questions</span>
+    </li>
+    <li style="padding: var(--spacing-sm) 0; display: flex; align-items: start; gap: var(--spacing-sm);">
+      <svg class="w-5 h-5" style="color: var(--success); flex-shrink: 0; margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span style="color: var(--text-secondary); font-size: 14px;">Practice good posture and body language</span>
+    </li>
+  </ul>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+function videoInterviewPage() {
+  return {
+    // State
+    recording: false,
+    processing: false,
+    analysisComplete: false,
+    mediaRecorder: null,
+    videoBlob: null,
+    feedback: '',
+    score: null,
+    detailedAnalysis: null,
+    recordingTime: '00:00',
+    recordingInterval: null,
+    recordingStartTime: null,
+    stream: null,
+    currentQuestion: '{{ question or "Tell me about a challenging project you worked on and how you overcame obstacles." }}',
+    selectedCategory: '',
+    selectedDifficulty: '',
+    aiSpeaking: false,
+    questionAudio: null,
+    audioElement: null,
+    interviewStarted: false,
+    
+    async init() {
+      await this.setupCamera();
+    },
+    
+    async setupCamera() {
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: 1280, height: 720 }, 
+          audio: true 
+        });
+        document.getElementById('videoElement').srcObject = this.stream;
+        document.getElementById('videoPlaceholder').style.display = 'none';
+        document.getElementById('videoElement').style.display = 'block';
+      } catch(err) {
+        alert('Camera access denied. Please allow camera and microphone access.');
+        console.error('Camera setup error:', err);
+      }
+    },
+    
+    startInterview() {
+      this.interviewStarted = true;
+      this.getNewQuestion(false, true);
+    },
+    
+    startRecording() {
+      if(!this.stream) {
+        alert('Camera not ready. Please refresh the page.');
+        return;
+      }
+      
+      const chunks = [];
+      this.mediaRecorder = new MediaRecorder(this.stream, {
+        mimeType: 'video/webm;codecs=vp8,opus'
+      });
+      
+      this.mediaRecorder.ondataavailable = e => {
+        if(e.data.size > 0) chunks.push(e.data);
+      };
+      
+      this.mediaRecorder.onstop = () => {
+        this.videoBlob = new Blob(chunks, {type:'video/webm'});
+        clearInterval(this.recordingInterval);
+      };
+      
+      this.mediaRecorder.start();
+      this.recording = true;
+      this.analysisComplete = false;
+      this.recordingStartTime = Date.now();
+      
+      this.recordingInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+        const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const secs = (elapsed % 60).toString().padStart(2, '0');
+        this.recordingTime = `${mins}:${secs}`;
+      }, 1000);
+    },
+    
+    stopRecording() {
+      if(this.mediaRecorder && this.recording){
+        this.mediaRecorder.stop();
+        this.recording = false;
+        clearInterval(this.recordingInterval);
+      }
+    },
+    
+    retakeVideo() {
+      this.videoBlob = null;
+      this.feedback = '';
+      this.score = null;
+      this.detailedAnalysis = null;
+      this.analysisComplete = false;
+      this.recordingTime = '00:00';
+    },
+    
+    async uploadVideo() {
+      if(!this.videoBlob) {
+        alert('No video recorded!');
+        return;
+      }
+      
+      // Check recording duration (must be at least 3 seconds)
+      const recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+      if(recordingDuration < 3) {
+        alert('Recording is too short! Please record at least 3 seconds of your answer.');
+        return;
+      }
+      
+      // Check video blob size (must be at least 10KB)
+      if(this.videoBlob.size < 10000) {
+        alert('Video is too short or empty. Please record a proper answer.');
+        return;
+      }
+      
+      this.processing = true;
+      this.analysisComplete = false;
+      
+      try {
+        const fd = new FormData();
+        fd.append('video', this.videoBlob, 'interview.webm');
+        fd.append('question', this.currentQuestion);
+        
+        const res = await fetch('/upload_video', {
+          method: 'POST',
+          body: fd
+        });
+        
+        if(!res.ok) {
+          throw new Error('Upload failed');
+        }
+        
+        const data = await res.json();
+        
+        if(data.success) {
+          this.feedback = data.feedback || 'Analysis complete!';
+          this.score = data.score ? Math.round(data.score * 10) / 10 : null;
+          this.detailedAnalysis = data.detailed_analysis || {};
+          this.analysisComplete = true;
+          
+          setTimeout(() => {
+            document.querySelector('.slide-in')?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'nearest' 
+            });
+          }, 300);
+        } else {
+          throw new Error(data.error || 'Analysis failed');
+        }
+      } catch(err) {
+        console.error('Upload error:', err);
+        alert('Failed to analyze video: ' + err.message);
+        this.feedback = 'Error: ' + err.message;
+      } finally {
+        this.processing = false;
+      }
+    },
+    
+    async getNewQuestion(useAI = false, isFirstQuestion = false) {
+      try {
+        const response = await fetch('/get_video_question', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            category: this.selectedCategory || null,
+            difficulty: this.selectedDifficulty || null,
+            use_ai: useAI,
+            first_question: isFirstQuestion
+          })
+        });
+        
+        const data = await response.json();
+        
+        if(data.success) {
+          this.currentQuestion = data.question;
+          
+          if(data.audio) {
+            this.questionAudio = data.audio;
+            setTimeout(() => {
+              this.playQuestionAudio();
+            }, 500);
+          }
+          
+          if(!isFirstQuestion) {
+            this.retakeVideo();
+          }
+        } else {
+          alert('Failed to get new question. Please try again.');
+        }
+      } catch(err) {
+        console.error('Error getting question:', err);
+        alert('Failed to load question. Please try again.');
+      }
+    },
+    
+    playQuestionAudio() {
+      if(!this.questionAudio) {
+        alert('Audio not available for this question.');
+        return;
+      }
+      
+      if(this.questionAudio.use_browser_tts && this.questionAudio.text) {
+        this.playBrowserTTS(this.questionAudio.text);
+        return;
+      }
+      
+      if(!this.questionAudio.success) {
+        if(this.questionAudio.text) {
+          this.playBrowserTTS(this.questionAudio.text);
+        } else {
+          alert('Audio not available for this question.');
+        }
+        return;
+      }
+      
+      this.stopQuestionAudio();
+      
+      this.audioElement = new Audio();
+      
+      if(this.questionAudio.audio_url) {
+        this.audioElement.src = this.questionAudio.audio_url;
+      } else if(this.questionAudio.audio_base64) {
+        this.audioElement.src = 'data:audio/mp3;base64,' + this.questionAudio.audio_base64;
+      }
+      
+      this.audioElement.onplay = () => {
+        this.aiSpeaking = true;
+      };
+      
+      this.audioElement.onended = () => {
+        this.aiSpeaking = false;
+      };
+      
+      this.audioElement.onerror = () => {
+        this.aiSpeaking = false;
+        console.error('Error playing audio');
+        if(this.questionAudio.text) {
+          this.playBrowserTTS(this.questionAudio.text);
+        }
+      };
+      
+      this.audioElement.play().catch(err => {
+        console.error('Audio play error:', err);
+        this.aiSpeaking = false;
+        if(this.questionAudio.text) {
+          this.playBrowserTTS(this.questionAudio.text);
+        }
+      });
+    },
+    
+    playBrowserTTS(text) {
+      if('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        const voices = window.speechSynthesis.getVoices();
+        const femaleVoice = voices.find(v => 
+          v.name.includes('Female') || 
+          v.name.includes('Samantha') || 
+          v.name.includes('Victoria') ||
+          v.name.includes('Google US English Female') ||
+          v.name.includes('Microsoft Zira')
+        );
+        
+        if(femaleVoice) {
+          utterance.voice = femaleVoice;
+        }
+        
+        utterance.rate = 0.95;
+        utterance.pitch = 1.1;
+        utterance.volume = 1.0;
+        
+        utterance.onstart = () => {
+          this.aiSpeaking = true;
+        };
+        
+        utterance.onend = () => {
+          this.aiSpeaking = false;
+        };
+        
+        utterance.onerror = (err) => {
+          console.error('Browser TTS error:', err);
+          this.aiSpeaking = false;
+        };
+        
+        window.speechSynthesis.speak(utterance);
+      } else {
+        alert('Text-to-speech not supported in your browser. Please read the question.');
+      }
+    },
+    
+    stopQuestionAudio() {
+      if(this.audioElement) {
+        this.audioElement.pause();
+        this.audioElement.currentTime = 0;
+        this.aiSpeaking = false;
+      }
+      
+      if('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        this.aiSpeaking = false;
+      }
+    }
+  };
+}
+</script>
+{% endblock %}

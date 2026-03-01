@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" x-data="appState()" x-init="init()" :class="dark ? 'dark' : ''">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}IntervYou - AI Interview Intelligence Platform{% endblock %}</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="IntervYou">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="apple-touch-icon" href="/static/icons/icon-152x152.png">
+  
+  <!-- Design System -->
+  <link rel="stylesheet" href="/static/design-system.css">
+  
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  {% block extra_head %}{% endblock %}
+  
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  {% include 'components/sidebar.html' %}
+  
+  <!-- Top Bar -->
+  {% include 'components/topbar.html' %}
+  
+  <!-- Main Content -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+  
+  <!-- Global Alpine.js State -->
+  <script>
+    function appState() {
+      return {
+        dark: false,
+        user: {{ user|tojson if user else '{}' }},
+        
+        init() {
+          // Load theme preference
+          const savedTheme = localStorage.getItem('iv_theme');
+          this.dark = savedTheme === 'dark';
+          this.applyTheme();
+          
+          // Initialize page-specific logic
+          if (typeof pageInit === 'function') {
+            pageInit.call(this);
+          }
+        },
+        
+        toggleTheme() {
+          this.dark = !this.dark;
+          localStorage.setItem('iv_theme', this.dark ? 'dark' : 'light');
+          this.applyTheme();
+        },
+        
+        applyTheme() {
+          if (this.dark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+      };
+    }
+  </script>
+  
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -20,7 +20,7 @@ fileConfig(config.config_file_name)
 # Import your models' Base here so autogenerate sees them
 # e.g. from myapp.models import Base
 # Replace 'fastapi_app' with your module path if needed
-from fastapi_app import Base  # ensure Base is importable
+from fastapi_app_cleaned import Base  # ensure Base is importable
 
 target_metadata = Base.metadata
 

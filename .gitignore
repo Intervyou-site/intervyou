@@ -1,69 +1,76 @@
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
-.venv/
-env/
-ENV/
-
-# Environment
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 .env
-.env.local
-.env.*.local
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-database.db
-backup/
-
-# IDE
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
+*~
 .DS_Store
-Thumbs.db
-
-# Uploads
-uploads/*
-!uploads/.gitkeep
-static/uploads/*
-!static/uploads/.gitkeep
-static/audio/*
-!static/audio/.gitkeep
-
-# Logs
+database.db
 *.log
-logs/
-app-logs/
-app-logs-new/
-*.zip
+node_modules/
+static/react-dist/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Build
-dist/
-build/
-*.egg-info/
-
-# Alembic
-alembic/versions/*.pyc
-
-# Temporary
+# Temporary files
+backup/
+uploads/
 *.tmp
 *.bak
-swark-output/
 
-# Docker
-docker-compose.override.yml
-ssl/
+# Test files
+test_*.py
+test-*.html
+test-*.ps1
+
+# Documentation (keep only essential)
+*_COMPLETE.md
+*_FIX*.md
+*_IMPLEMENTATION.md
+*_SUMMARY.md
+*_GUIDE.md
+*_INSTRUCTIONS.md
+*_ANALYSIS.md
+*_ENHANCED.md
+*_PROGRESS.md
+*_CHECKLIST.md
+*_COMPARISON.md
+START_*.txt
+SUCCESS_*.txt
+RUN_*.txt
+
+# Audio/Video uploads
+static/audio/*.mp3
+static/audio/*.wav
+static/audio/*.webm
+static/uploads/*.webm
+static/uploads/*.mp4
+
+# Keep only essential docs
+!README.md
+!ARCHITECTURE.md
+!DOCKER_SETUP.md

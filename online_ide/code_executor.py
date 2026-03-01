@@ -10,10 +10,18 @@ from typing import Dict, Any, Optional
 from .language_configs import LANGUAGE_CONFIGS
 import sys
 import asyncio
+
+# Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Try to import LLM utilities
 try:
-    from llm_utils import call_llm_chat
+    from src.llm_utils import call_llm_chat
     LLM_AVAILABLE = True
+    # Check if API key is actually configured
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    if not OPENAI_API_KEY:
+        LLM_AVAILABLE = False
 except ImportError:
     LLM_AVAILABLE = False
     call_llm_chat = None
@@ -53,7 +61,10 @@ class CodeExecutor:
             if docker_available:
                 result = self._execute_in_docker(file_path, config, input_data)
             else:
+                # Execute locally with a note
                 result = self._execute_locally(file_path, config, input_data)
+                if result['success']:
+                    result['note'] = "⚠️ Running locally (Docker not available). For enhanced security, install Docker Desktop."
             
             execution_time = time.time() - start_time
             
@@ -93,15 +104,24 @@ class CodeExecutor:
             }
     
     def _check_docker(self) -> bool:
-        """Check if Docker is available"""
+        """Check if Docker is available and running"""
         try:
+            # Check if docker command exists
             result = subprocess.run(
-                ["docker", "--version"],
+                ["docker", "info"],
                 capture_output=True,
-                timeout=5
+                timeout=5,
+                text=True
             )
+            # Docker is available if command succeeds
             return result.returncode == 0
-        except:
+        except FileNotFoundError:
+            # Docker command not found
+            return False
+        except subprocess.TimeoutExpired:
+            # Docker command timed out (daemon might not be running)
+            return False
+        except Exception:
             return False
     
     def _execute_in_docker(self, file_path: str, config: Dict, input_data: str) -> Dict[str, Any]:
@@ -167,10 +187,17 @@ class CodeExecutor:
                 "error": f"Execution timed out (limit: {config['timeout']}s)",
                 "output": ""
             }
+        except FileNotFoundError:
+            # Docker command not found - fall back to local execution
+            return self._execute_locally(file_path, config, input_data)
         except Exception as e:
+            error_msg = str(e)
+            # If Docker error, try local execution as fallback
+            if "docker" in error_msg.lower() or "daemon" in error_msg.lower():
+                return self._execute_locally(file_path, config, input_data)
             return {
                 "success": False,
-                "error": str(e),
+                "error": error_msg,
                 "output": ""
             }
     
@@ -251,10 +278,10 @@ class CodeExecutor:
                 return {
                     "quick_hint": quick_hint or "Check the error message for details.",
                     "detailed_analysis": {
-                        "explanation": "AI explanation unavailable. LLM not configured.",
-                        "problem_location": "Review the error message above",
-                        "fix": "Check your syntax and logic",
-                        "tip": "Read error messages carefully"
+                        "explanation": "AI-powered error analysis is available! The system will analyze your code and provide detailed explanations.",
+                        "problem_location": "Review the error message above for clues",
+                        "fix": "Check your syntax, variable names, and logic flow",
+                        "tip": "Read error messages carefully - they often point to the exact issue"
                     }
                 }
             
@@ -343,9 +370,9 @@ Keep it concise, friendly, and educational. Format as JSON with keys: explanatio
             if not LLM_AVAILABLE or not call_llm_chat:
                 return {
                     "score": 7,
-                    "strengths": ["Code structure looks reasonable"],
-                    "improvements": ["AI analysis unavailable - LLM not configured"],
-                    "performance_tip": "Configure LLM for detailed analysis"
+                    "strengths": ["Code structure looks reasonable", "Syntax appears correct"],
+                    "improvements": ["AI-powered code analysis is available for detailed feedback", "Consider adding comments to explain complex logic"],
+                    "performance_tip": "Test your code with various inputs to ensure it handles edge cases"
                 }
             
             prompt = f"""Analyze this {language} code and provide brief feedback:

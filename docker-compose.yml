@@ -19,8 +19,11 @@ services:
       retries: 5
 
   web:
-    build: .
-    container_name: intervyou-app
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: intervyou-cleaned:latest
+    container_name: intervyou-app-cleaned
     ports:
       - "8000:8000"
     dns:
@@ -28,8 +31,12 @@ services:
       - 8.8.4.4
     environment:
       - DATABASE_URL=postgresql://intervyou:intervyou123@db:5432/intervyou
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-change-in-production}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SERPAPI_KEY=${SERPAPI_KEY}
+      - COPYLEAKS_API_KEY=${COPYLEAKS_API_KEY}
+      - COPYLEAKS_EMAIL=${COPYLEAKS_EMAIL}
+      - COPYLEAKS_WEBHOOK_URL=${COPYLEAKS_WEBHOOK_URL}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
@@ -40,12 +47,13 @@ services:
       - ./uploads:/app/uploads
       - ./static/audio:/app/static/audio
       - ./static/uploads:/app/static/uploads
+      - ./services:/app/services
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

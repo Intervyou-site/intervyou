@@ -1,0 +1,348 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Profile - IntervYou{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Profile</h1>
+  <p class="page-subtitle">Your performance overview and account settings</p>
+</div>
+
+<!-- Profile Header -->
+<div class="card" style="margin-bottom: var(--spacing-2xl);">
+  <div style="display: flex; align-items: start; gap: var(--spacing-xl);">
+    <!-- Avatar -->
+    <div style="position: relative;">
+      <div style="width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), #1D4ED8); display: flex; align-items: center; justify-content: center; color: white; font-size: 36px; font-weight: 700;">
+        {{ user.initials if user and user.initials else 'U' }}
+      </div>
+      <div style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; background-color: var(--success); border-radius: 50%; border: 3px solid var(--bg-primary);"></div>
+    </div>
+    
+    <!-- Info -->
+    <div style="flex: 1;">
+      <h2 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--spacing-xs);">
+        {{ user.name if user and user.name else 'User' }}
+      </h2>
+      <div style="display: flex; align-items: center; gap: var(--spacing-sm); color: var(--text-secondary); font-size: 14px; margin-bottom: var(--spacing-md);">
+        <svg style="width: 16px; height: 16px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        <span>{{ user.email if user and user.email else 'user@example.com' }}</span>
+      </div>
+      
+      <div style="display: flex; gap: var(--spacing-sm);">
+        <span class="badge badge-primary">
+          {{ user.badge if user and user.badge else 'Rising Learner' }}
+        </span>
+        <span class="badge badge-success">
+          Active
+        </span>
+      </div>
+    </div>
+    
+    <!-- Actions -->
+    <div style="display: flex; gap: var(--spacing-sm);">
+      <button class="btn btn-secondary">Edit Profile</button>
+      <button class="btn btn-ghost">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid-4" style="margin-bottom: var(--spacing-2xl);">
+  <div class="metric-card">
+    <div class="metric-label">Total Attempts</div>
+    <div class="metric-value">{{ user.attempts if user and user.attempts else 0 }}</div>
+    <div class="metric-change">Total completed</div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-label">Average Score</div>
+    <div class="metric-value">{{ "%.1f"|format(user.avg) if user and user.avg else "0.0" }}</div>
+    <div class="metric-change">Out of 10</div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-label">Best Score</div>
+    <div class="metric-value">{{ "%.1f"|format(user.best) if user and user.best else "0.0" }}</div>
+    <div class="metric-change">Personal record</div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-label">Current Streak</div>
+    <div class="metric-value">{{ user.streak if user and user.streak else 0 }}</div>
+    <div class="metric-change">Days in a row</div>
+  </div>
+</div>
+
+<!-- Progress Section -->
+<div class="card" style="margin-bottom: var(--spacing-2xl);">
+  <div class="card-header">
+    <h3 class="card-title">Overall Progress</h3>
+    <p class="card-subtitle">Your journey to interview mastery</p>
+  </div>
+  
+  {% if user and user.attempts and user.attempts > 0 %}
+  <div style="margin-bottom: var(--spacing-lg);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
+      <span style="font-size: 14px; color: var(--text-secondary);">Average Performance</span>
+      <span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">{{ "%.0f"|format((user.avg / 10 * 100)) if user.avg else 0 }}%</span>
+    </div>
+    <div class="progress-bar" style="height: 12px;">
+      <div class="progress-bar-fill" style="width: {{ "%.0f"|format((user.avg / 10 * 100)) if user.avg else 0 }}%;"></div>
+    </div>
+  </div>
+  {% endif %}
+  
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg); {% if user and user.attempts and user.attempts > 0 %}padding-top: var(--spacing-lg); border-top: 1px solid var(--border-primary);{% endif %}">
+    <div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Questions Answered</div>
+      <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">{{ user.attempts if user and user.attempts else 0 }}</div>
+    </div>
+    <div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Average Score</div>
+      <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">
+        {% if user and user.avg %}
+          {{ "%.1f"|format(user.avg) }} / 10
+        {% else %}
+          N/A
+        {% endif %}
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Best Score</div>
+      <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">
+        {% if user and user.best %}
+          {{ "%.1f"|format(user.best) }} / 10
+        {% else %}
+          N/A
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid-2" style="margin-bottom: var(--spacing-2xl);">
+  <!-- Category Performance -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Category Performance</h3>
+      <p class="card-subtitle">Your strengths across different areas</p>
+    </div>
+    <div>
+      <canvas id="categoryChart" height="200"></canvas>
+    </div>
+  </div>
+  
+  <!-- Recent Activity -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Recent Activity</h3>
+      <p class="card-subtitle">Your latest practice sessions</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+      {% if user and user.attempts and user.attempts > 0 %}
+      <div style="display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--accent-light); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 20px; height: 20px; color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Practice Sessions Completed</div>
+          <div style="font-size: 12px; color: var(--text-tertiary);">{{ user.attempts }} total attempts</div>
+        </div>
+        {% if user.avg %}
+        <div style="font-size: 16px; font-weight: 600; color: var(--success);">{{ "%.1f"|format(user.avg) }}</div>
+        {% endif %}
+      </div>
+      
+      {% if user.best %}
+      <div style="display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--success-light); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 20px; height: 20px; color: var(--success);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Personal Best Score</div>
+          <div style="font-size: 12px; color: var(--text-tertiary);">Highest achievement</div>
+        </div>
+        <div style="font-size: 16px; font-weight: 600; color: var(--success);">{{ "%.1f"|format(user.best) }}</div>
+      </div>
+      {% endif %}
+      
+      {% if user.streak and user.streak > 0 %}
+      <div style="display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--warning-light); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 20px; height: 20px; color: var(--warning);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/>
+          </svg>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">Current Streak</div>
+          <div style="font-size: 12px; color: var(--text-tertiary);">{{ user.streak }} days in a row</div>
+        </div>
+      </div>
+      {% endif %}
+      {% else %}
+      <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-tertiary);">
+        <svg style="width: 48px; height: 48px; margin: 0 auto var(--spacing-md); opacity: 0.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p style="font-size: 14px;">No activity yet. Start practicing to see your progress!</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Account Info -->
+<div class="grid-2">
+  <!-- Personal Information -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Personal Information</h3>
+      <p class="card-subtitle">Your account details</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+      <div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Full Name</div>
+        <div style="font-size: 14px; color: var(--text-primary);">{{ user.name if user and user.name else 'User' }}</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Email Address</div>
+        <div style="font-size: 14px; color: var(--text-primary);">{{ user.email if user and user.email else 'user@example.com' }}</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Member Since</div>
+        <div style="font-size: 14px; color: var(--text-primary);">
+          {% if user and user.created_at %}
+            {{ user.created_at.strftime('%B %Y') }}
+          {% elif user and user.joined %}
+            {{ user.joined }}
+          {% else %}
+            Not available
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Account Status</div>
+        <div style="font-size: 14px; color: var(--success);">Active</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Achievements -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Achievements</h3>
+      <p class="card-subtitle">Your milestones and badges</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md);">
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🏆</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">First Win</div>
+      </div>
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🔥</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">7 Day Streak</div>
+      </div>
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">⭐</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Perfect Score</div>
+      </div>
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">📚</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">50 Questions</div>
+      </div>
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🎯</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Category Master</div>
+      </div>
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); opacity: 0.4;">
+        <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🚀</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Locked</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function pageInit() {
+    setTimeout(() => {
+      initCategoryChart();
+    }, 100);
+  }
+  
+  function initCategoryChart() {
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) return;
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#9CA3AF' : '#6B7280';
+    const gridColor = isDark ? '#1F2937' : '#E5E7EB';
+    
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['Technical', 'Behavioral', 'System Design', 'Coding', 'Leadership', 'Communication'],
+        datasets: [{
+          label: 'Your Performance',
+          data: [8.5, 7.2, 6.8, 9.1, 7.5, 8.0],
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          borderColor: '#2563EB',
+          borderWidth: 2,
+          pointBackgroundColor: '#2563EB',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: '#2563EB'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 10,
+            ticks: {
+              color: textColor,
+              backdropColor: 'transparent'
+            },
+            grid: {
+              color: gridColor
+            },
+            pointLabels: {
+              color: textColor,
+              font: {
+                size: 12
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
