@@ -235,7 +235,17 @@ function displayOutput(result) {
     const outputContent = document.getElementById('outputContent');
     
     if (result.success) {
+        let noteHtml = '';
+        if (result.note) {
+            noteHtml = `
+                <div class="ai-section" style="background: #2d3748; border-left: 3px solid #f6ad55; margin-bottom: 15px;">
+                    <p style="margin: 0; color: #f6ad55;"><i class="fas fa-info-circle"></i> ${escapeHtml(result.note)}</p>
+                </div>
+            `;
+        }
+        
         outputContent.innerHTML = `
+            ${noteHtml}
             <div class="ai-section output-success">
                 <h4><i class="fas fa-check-circle"></i> Success!</h4>
                 <pre>${escapeHtml(result.output || 'Program executed successfully (no output)')}</pre>
