@@ -1,114 +1,110 @@
-# IntervYou - AI Interview Coach
+# IntervYou - AI-Powered Interview Intelligence Platform
 
-An AI-powered interview preparation platform built with FastAPI, featuring mock interviews, practice sessions, performance tracking, and video analysis.
+An intelligent interview preparation platform powered by AI, featuring real-time feedback, video analysis, and personalized coaching.
 
 ## Features
 
-- 🎯 **Practice Sessions** - Category-based interview practice with AI feedback
-- 🎤 **Mock Interviews** - Full interview simulations with scoring
-- 📹 **Video Interviews** - Practice with video recording and AI analysis
-- 📊 **Performance Reports** - Track your progress with detailed analytics
-- 🧭 **AI Advisor** - Personalized learning plans based on your performance
-- 🏆 **Leaderboard** - Compete with other users
-- 👤 **User Profiles** - Track your stats, badges, and category breakdown
-- ⭐ **Saved Questions** - Bookmark questions for later review
-- 🌓 **Dark Mode** - Full dark mode support
-- 🔐 **Authentication** - Google OAuth and email/password login
+- **AI-Powered Feedback**: Get instant, detailed feedback on your interview answers
+- **Video Interview Practice**: Practice with AI analysis of body language and speech patterns
+- **Resume Builder**: Create ATS-optimized resumes with AI suggestions
+- **Performance Analytics**: Track your progress with detailed metrics
+- **Question Bank**: Access thousands of interview questions across categories
+- **Bookmarking System**: Save and revisit questions for focused practice
+- **Leaderboard**: Compete with other users and track your ranking
 
 ## Tech Stack
 
 - **Backend**: FastAPI (Python)
-- **Frontend**: Jinja2 Templates, Alpine.js, Tailwind CSS
-- **Database**: PostgreSQL (SQLAlchemy ORM)
-- **AI/LLM**: OpenAI GPT-4 / Hugging Face Transformers
-- **Video Analysis**: OpenCV, MediaPipe, librosa, TextBlob
-- **Authentication**: OAuth 2.0 (Google), JWT sessions
-- **Email**: SMTP with OTP verification
+- **Frontend**: HTML, CSS, JavaScript (Alpine.js)
+- **Database**: SQLite (development), PostgreSQL (production)
+- **AI/ML**: OpenAI GPT, Azure Speech Services
+- **Deployment**: Docker, Docker Compose
 
 ## Quick Start
 
-### 1. Install Dependencies
+### Local Development
 
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd intervyou
+```
+
+2. Create virtual environment
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
-
-Copy `.env.example` to `.env` and configure:
-
+4. Set up environment variables
 ```bash
 cp .env.example .env
+# Edit .env with your API keys
 ```
 
-Required environment variables:
-```env
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=postgresql://user:password@localhost:5433/intervyou
-OPENAI_API_KEY=your-openai-key  # Optional
-```
-
-### 3. Setup Database
-
-```bash
-python -c "from fastapi_app import init_db; init_db()"
-```
-
-### 4. Run the Application
-
+5. Run the application
 ```bash
 python start.py
 ```
 
 Visit `http://localhost:8000`
 
-## Video Interview Analysis
+### Docker Deployment
 
-The video interview feature includes:
+See [DOCKER_SETUP.md](DOCKER_SETUP.md) for detailed Docker instructions.
 
-- **Validation**: Checks video duration, face detection, and audio presence
-- **Scoring**: Confidence, professionalism, and engagement scores (0-10)
-- **AI Analysis**: Sentiment, emotion, and text quality analysis
-- **Feedback**: Actionable recommendations for improvement
+Quick start:
+```bash
+# Build and run
+docker-compose up -d
+
+# Or use the management script
+./manage-docker.ps1 build
+./manage-docker.ps1 start
+```
 
 ## Project Structure
 
 ```
 intervyou/
-├── fastapi_app.py              # Main application
-├── video_analysis.py           # Video evaluation
-├── free_ai_models.py           # AI text analysis
-├── realtime_analysis.py        # Real-time feedback
-├── question_generator.py       # Question generation
-├── auth_routes.py              # Authentication
-├── templates/                  # HTML templates
-├── static/                     # CSS, JS, images
-└── requirements.txt            # Dependencies
+├── services/           # Business logic services
+├── templates/          # HTML templates
+│   ├── components/     # Reusable UI components
+│   └── *_new.html      # New UI templates
+├── static/             # CSS, JS, images
+├── src/                # ML pipelines and utilities
+├── online_ide/         # Code editor functionality
+├── tests/              # Test files
+├── config/             # Configuration files
+└── entrypoint/         # ML training/inference entry points
 ```
 
-## API Endpoints
+## Environment Variables
 
-### Video Interview
-- `POST /api/video_interview` - Upload and analyze video
-- `GET /api/video_analysis/status` - Check available features
+Required environment variables:
 
-### Practice & Mock
-- `POST /api/practice` - Submit practice answer
-- `POST /api/mock_interview` - Start mock interview
-- `GET /api/performance` - Get performance stats
+- `OPENAI_API_KEY`: OpenAI API key for AI features
+- `AZURE_SPEECH_KEY`: Azure Speech Services key
+- `AZURE_SPEECH_REGION`: Azure region
+- `SECRET_KEY`: Flask secret key
+- `DATABASE_URL`: Database connection string (optional)
 
-### User Management
-- `POST /api/register` - Register user
-- `POST /api/login` - Login user
-- `GET /api/profile` - Get user profile
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## License
 
-MIT License
+All rights reserved © 2025 IntervYou
 
-## Acknowledgments
+## Support
 
-- OpenAI for GPT models
-- Hugging Face for transformers
-- FastAPI framework
-- MediaPipe for face detection
+For issues and questions, please open an issue on GitHub.
