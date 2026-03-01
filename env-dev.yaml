@@ -1,0 +1,27 @@
+# Development environment configuration
+name: intervyou-ml-dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - jupyter
+  - matplotlib
+  - seaborn
+  - pip:
+    - fastapi
+    - uvicorn
+    - transformers
+    - torch
+    - pandas
+    - numpy
+    - scikit-learn
+    - pyyaml
+    - python-multipart
+    - jinja2
+    - aiofiles
+    - pytest
+    - pytest-asyncio
+    - black
+    - flake8
