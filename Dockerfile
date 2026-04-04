@@ -42,4 +42,4 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
 # Run the cleaned application
-CMD ["python", "-m", "gunicorn", "fastapi_app_cleaned:app", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120"]
+CMD ["sh", "-c", "python -m gunicorn fastapi_app_cleaned:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-10000} --timeout 120"]
