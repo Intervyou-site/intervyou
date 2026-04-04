@@ -1,0 +1,56 @@
+# Render-specific ignore file
+# This reduces the slug size for deployment
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Notebooks and data
+notebooks/
+data/
+*.ipynb
+*.csv
+*.parquet
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# Media files
+static/audio/
+static/uploads/
+uploads/
+*.mp3
+*.wav
+*.webm
+*.mp4
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Development files
+.vscode/
+.idea/
+*.log
+*.tmp
+backup/
+
+# Scripts
+*.ps1
+*.sh
+docker-*
+azure-*
+manage-*

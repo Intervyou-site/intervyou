@@ -1,70 +1,116 @@
 # Git and version control
-.git
+.git/
 .gitignore
 .gitlab-ci.yml
+.gitattributes
 
-# Documentation
-README.md
-CODE_CLEANUP_SUMMARY.md
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+
+# Documentation (not needed in container)
 *.md
+!README.md
+docs/
 
 # Development files
 .vscode/
 .idea/
-*.pyc
-__pycache__/
-.pytest_cache/
-.coverage
-.env.dev
-.env.example
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
-# Notebooks and analysis
+# Notebooks and data science files
 notebooks/
 *.ipynb
+data/
+*.csv
+*.parquet
 swark-output/
 
 # Logs and temporary files
 *.log
 *.tmp
-.DS_Store
-Thumbs.db
+*.bak
+*.backup
+backup/
 
 # Build artifacts
 build/
 dist/
 *.egg-info/
-
-# Old application files (keep only cleaned version)
-fastapi_app.py
+.eggs/
 
 # Test files
 tests/
 test_*.py
 *_test.py
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
 
-# Backup files
-backup/
-*.bak
-*.backup
+# Database files (use external DB)
+*.db
+*.sqlite
+*.sqlite3
+database.db
 
-# Large model files (download at runtime if needed)
+# Large media files
+static/audio/
+static/uploads/
+uploads/
+*.mp3
+*.wav
+*.webm
+*.mp4
+*.avi
+
+# Model files (download at runtime if needed)
 models/
 *.bin
 *.safetensors
-
-# Development dependencies
-requirements-dev.txt
+*.onnx
+*.h5
+*.pkl
+*.joblib
 
 # Docker files (not needed inside container)
-Dockerfile
+Dockerfile*
 docker-compose*.yml
 .dockerignore
+*.ps1
+*.sh
 
-# Environment files (use docker-compose env instead)
-.env
-.env.local
-.env.production
+# Environment files (set via platform)
+.env*
+!.env.example
 
 # Cache directories
 .cache/
 node_modules/
+.npm/
+
+# Windows specific
+Thumbs.db
+desktop.ini
+
+# Mac specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Azure/deployment scripts
+azure-setup.*
+docker-*.ps1
+docker-*.sh
+manage-docker.ps1
