@@ -18,9 +18,18 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+# Environment files - NEVER commit these
 .env
-.env.dev
+.env.*
+!.env.example
 .env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+.env.test
+
+# Virtual environments
 .venv/
 env/
 venv/
