@@ -65,15 +65,19 @@ htmlcov/
 *.sqlite3
 database.db
 
-# Large media files
-static/audio/
-static/uploads/
-uploads/
+# Large media files only (exclude by extension, not directory)
+# This allows CSS, JS, images to be included while excluding large audio/video
 *.mp3
 *.wav
 *.webm
 *.mp4
 *.avi
+*.mov
+*.flv
+*.wmv
+
+# But keep small audio files in specific locations if needed
+# (Docker will include everything else in static/ by default)
 
 # Model files (download at runtime if needed)
 models/
