@@ -781,6 +781,25 @@ def health_check():
             "error": str(e)
         }
 
+@app.get("/api/debug/features")
+def debug_features():
+    """Debug endpoint to check which features are available"""
+    try:
+        return {
+            "practice_features_available": PRACTICE_FEATURES_AVAILABLE if 'PRACTICE_FEATURES_AVAILABLE' in globals() else False,
+            "aptitude_service": aptitude_service is not None if 'aptitude_service' in globals() else False,
+            "coding_service": coding_service is not None if 'coding_service' in globals() else False,
+            "aptitude_attempt_model": AptitudeAttempt is not None if 'AptitudeAttempt' in globals() else False,
+            "mcq_attempt_model": MCQAttempt is not None if 'MCQAttempt' in globals() else False,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Debug features check failed: {e}")
+        return {
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
 @app.get("/api/session/check")
 def check_session(request: Request, db=Depends(get_db)):
     """Debug endpoint to check session status (remove in production)"""
@@ -2919,8 +2938,13 @@ try:
     PRACTICE_FEATURES_AVAILABLE = True
     
     logger.info("✅ Practice enhancement services initialized")
+    logger.info(f"✅ AptitudeAttempt model: {AptitudeAttempt is not None}")
+    logger.info(f"✅ MCQAttempt model: {MCQAttempt is not None}")
 except Exception as e:
-    logger.warning(f"⚠️  Practice enhancement services not available: {e}")
+    logger.error(f"❌ Practice enhancement services failed to load: {e}")
+    logger.error(f"❌ Error type: {type(e).__name__}")
+    import traceback
+    logger.error(f"❌ Traceback: {traceback.format_exc()}")
     aptitude_service = None
     coding_service = None
     # Set None for models if not available
