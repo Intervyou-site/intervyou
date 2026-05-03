@@ -2902,11 +2902,23 @@ try:
     aptitude_service = AptitudeService()
     coding_service = CodingChallengeService()
     
+    # Set flag for practice features
+    PRACTICE_FEATURES_AVAILABLE = True
+    
     logger.info("✅ Practice enhancement services initialized")
 except Exception as e:
     logger.warning(f"⚠️  Practice enhancement services not available: {e}")
     aptitude_service = None
     coding_service = None
+    # Set None for models if not available
+    AptitudeQuestion = None
+    AptitudeAttempt = None
+    MCQAttempt = None
+    CodingChallengeScore = None
+    DailyStreak = None
+    RapidFireScore = None
+    PracticeRecommendation = None
+    PRACTICE_FEATURES_AVAILABLE = False
 
 # Aptitude endpoints
 @app.get("/api/aptitude/categories")
@@ -3161,13 +3173,16 @@ async def get_streak_info(request: Request, db=Depends(get_db)):
         if not user:
             return {"error": "Not authenticated"}, 401
         
+        if not DailyStreak or not PRACTICE_FEATURES_AVAILABLE:
+            return {"success": True, "current_streak": 0, "longest_streak": 0, "total_days": 0}
+        
         streak_service = StreakService(db, DailyStreak, Attempt)
         streak_info = streak_service.get_streak_info(user.id)
         
         return {"success": True, **streak_info}
     except Exception as e:
         logger.error(f"Error getting streak info: {e}")
-        return {"error": str(e)}
+        return {"success": True, "current_streak": 0, "longest_streak": 0, "total_days": 0}
 
 @app.post("/api/streak/update")
 async def update_streak(request: Request, db=Depends(get_db)):
@@ -3209,6 +3224,9 @@ async def get_recommendations(request: Request, db=Depends(get_db), limit: int =
         user = get_current_user(request, db)
         if not user:
             return {"error": "Not authenticated"}, 401
+        
+        if not MCQAttempt or not PRACTICE_FEATURES_AVAILABLE:
+            return {"success": True, "recommendations": []}
         
         rec_service = RecommendationService(db, Attempt, MCQAttempt, AptitudeAttempt)
         recommendations = rec_service.get_recommendations(user.id, limit)
