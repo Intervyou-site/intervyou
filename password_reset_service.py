@@ -11,17 +11,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Import email service at module level to catch import errors early
+# Try to import Resend email service first (Railway-compatible)
 try:
-    from email_service import email_service
+    from email_service_resend import resend_email_service
     EMAIL_SERVICE_AVAILABLE = True
-    logger.info("✅ Email service imported successfully")
+    EMAIL_SERVICE_TYPE = "Resend"
+    logger.info("✅ Resend email service imported successfully")
 except ImportError as e:
-    EMAIL_SERVICE_AVAILABLE = False
-    logger.error(f"❌ Failed to import email_service: {e}")
+    # Fallback to SMTP email service (for localhost)
+    try:
+        from email_service import email_service as resend_email_service
+        EMAIL_SERVICE_AVAILABLE = True
+        EMAIL_SERVICE_TYPE = "SMTP"
+        logger.info("✅ SMTP email service imported successfully")
+    except ImportError as e2:
+        EMAIL_SERVICE_AVAILABLE = False
+        EMAIL_SERVICE_TYPE = "None"
+        logger.error(f"❌ Failed to import any email service: {e}, {e2}")
 except Exception as e:
     EMAIL_SERVICE_AVAILABLE = False
-    logger.error(f"❌ Error importing email_service: {e}")
+    EMAIL_SERVICE_TYPE = "None"
+    logger.error(f"❌ Error importing email service: {e}")
 
 class PasswordResetStorage:
     """In-memory storage for password reset OTPs"""
@@ -106,7 +116,8 @@ password_reset_storage = PasswordResetStorage()
 
 def send_password_reset_email(email: str, otp: str, expiry_minutes: int = 10) -> bool:
     """
-    Send password reset email with OTP via Gmail SMTP
+    Send password reset email with OTP
+    Uses Resend API on Railway, SMTP on localhost
     Falls back to logging if email service is not configured
     """
     email_sent = False
@@ -117,27 +128,24 @@ def send_password_reset_email(email: str, otp: str, expiry_minutes: int = 10) ->
         # Fall through to logging fallback
     else:
         try:
-            logger.info(f"📧 Email service configured: {email_service.is_configured}")
-            logger.info(f"📧 MAIL_USERNAME: {bool(email_service.mail_username)}")
-            logger.info(f"📧 MAIL_PASSWORD: {bool(email_service.mail_password)}")
+            logger.info(f"📧 Using {EMAIL_SERVICE_TYPE} email service")
+            logger.info(f"📧 Email service configured: {resend_email_service.is_configured}")
             
-            if email_service.is_configured:
-                logger.info(f"📧 Attempting to send email via SMTP...")
+            if resend_email_service.is_configured:
+                logger.info(f"📧 Attempting to send email via {EMAIL_SERVICE_TYPE}...")
                 # Send actual email
-                success = email_service.send_password_reset_otp(email, otp, expiry_minutes)
+                success = resend_email_service.send_password_reset_otp(email, otp, expiry_minutes)
                 
                 if success:
-                    logger.info(f"✅ Password reset OTP email sent to {email}")
+                    logger.info(f"✅ Password reset OTP email sent to {email} via {EMAIL_SERVICE_TYPE}")
                     email_sent = True
                     return True
                 else:
                     logger.error(f"❌ Failed to send OTP email to {email}")
-                    logger.error(f"❌ Check Railway logs for SMTP errors")
+                    logger.error(f"❌ Check Railway logs for {EMAIL_SERVICE_TYPE} errors")
                     # Fall through to logging fallback
             else:
-                logger.warning("⚠️  Email service not configured - falling back to logs")
-                logger.warning(f"⚠️  MAIL_USERNAME present: {bool(email_service.mail_username)}")
-                logger.warning(f"⚠️  MAIL_PASSWORD present: {bool(email_service.mail_password)}")
+                logger.warning(f"⚠️  {EMAIL_SERVICE_TYPE} email service not configured - falling back to logs")
                 # Fall through to logging fallback
         
         except Exception as e:
