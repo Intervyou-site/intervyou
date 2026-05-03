@@ -3656,13 +3656,6 @@ async def upload_video(
                 logger.warning(f"⚠️ Vosk failed: {e}")
                 import traceback
                 logger.error(traceback.format_exc())
-                    os.unlink(wav_path)
-                except:
-                    pass
-            except Exception as e:
-                logger.error(f"❌ Google transcription error: {e}")
-                import traceback
-                logger.error(traceback.format_exc())
         
         logger.info(f"📝 Final transcription: '{transcription}' (method: {transcription_method})")
         
