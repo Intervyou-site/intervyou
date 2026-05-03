@@ -71,10 +71,15 @@ def add_flash(request: Request, message: str, category: str = "info"):
 
 @router.get("/auth/google")
 async def google_login(request: Request):
-    """Initiate Google OAuth login with proper state management"""
+    """Initiate Google OAuth login with proper redirect URI"""
     try:
-        # Generate redirect URI
-        redirect_uri = str(request.url_for('google_callback'))
+        # Use the exact redirect URI that's configured in Google Console
+        # Railway URL: https://intervyou-production-5a2d.up.railway.app
+        redirect_uri = "https://intervyou-production-5a2d.up.railway.app/auth/google/callback"
+        
+        # For local development, use localhost
+        if os.getenv("ENVIRONMENT") != "production":
+            redirect_uri = str(request.url_for('google_callback'))
         
         # Log the OAuth initiation
         logger.info(f"🔐 Initiating Google OAuth - Redirect URI: {redirect_uri}")

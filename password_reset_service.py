@@ -94,47 +94,55 @@ password_reset_storage = PasswordResetStorage()
 
 def send_password_reset_email(email: str, otp: str, expiry_minutes: int = 10) -> bool:
     """
-    Send password reset email with OTP
-    For now, just logs the OTP (in production, use actual email service)
+    Send password reset email with OTP via Gmail SMTP
+    Falls back to logging if email service is not configured
     """
     try:
-        # Make OTP VERY visible in logs
-        logger.info("")
-        logger.info("=" * 80)
-        logger.info("=" * 80)
-        logger.info("📧 📧 📧  PASSWORD RESET OTP CODE  📧 📧 📧")
-        logger.info("=" * 80)
-        logger.info(f"📧 Email: {email}")
-        logger.info(f"📧 OTP Code: {otp}")
-        logger.info(f"📧 Valid for: {expiry_minutes} minutes")
-        logger.info(f"📧 Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        logger.info("=" * 80)
-        logger.info("⚠️  CHECK RAILWAY LOGS TO SEE THIS OTP CODE")
-        logger.info("⚠️  In production, this would be sent via email service")
-        logger.info("=" * 80)
-        logger.info("")
+        # Try to import and use email service
+        from email_service import email_service
         
-        # Also print to stdout to ensure it appears in Railway logs
-        print("")
-        print("=" * 80)
-        print("📧 📧 📧  PASSWORD RESET OTP CODE  📧 📧 📧")
-        print("=" * 80)
-        print(f"📧 Email: {email}")
-        print(f"📧 OTP Code: {otp}")
-        print(f"📧 Valid for: {expiry_minutes} minutes")
-        print("=" * 80)
-        print("")
-        
-        # TODO: Integrate with actual email service
-        # Example with your existing email config:
-        # from email_service import send_email
-        # send_email(
-        #     to=email,
-        #     subject="Password Reset OTP",
-        #     body=f"Your password reset code is: {otp}\nValid for {expiry_minutes} minutes."
-        # )
-        
-        return True
+        if email_service.is_configured:
+            # Send actual email
+            success = email_service.send_password_reset_otp(email, otp, expiry_minutes)
+            
+            if success:
+                logger.info(f"✅ Password reset OTP email sent to {email}")
+                return True
+            else:
+                logger.error(f"❌ Failed to send OTP email to {email}")
+                # Fall through to logging fallback
+        else:
+            logger.warning("⚠️  Email service not configured - falling back to logs")
+            # Fall through to logging fallback
+    
+    except ImportError:
+        logger.warning("⚠️  Email service not available - falling back to logs")
     except Exception as e:
-        logger.error(f"Failed to send password reset email: {e}")
-        return False
+        logger.error(f"❌ Error sending email: {e}")
+    
+    # Fallback: Log OTP if email fails or is not configured
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info("📧 📧 📧  PASSWORD RESET OTP CODE (EMAIL FALLBACK)  📧 📧 📧")
+    logger.info("=" * 80)
+    logger.info(f"📧 Email: {email}")
+    logger.info(f"📧 OTP Code: {otp}")
+    logger.info(f"📧 Valid for: {expiry_minutes} minutes")
+    logger.info(f"📧 Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    logger.info("=" * 80)
+    logger.info("⚠️  Email service not available - check Railway logs for OTP")
+    logger.info("⚠️  Configure MAIL_USERNAME and MAIL_PASSWORD to enable email")
+    logger.info("=" * 80)
+    logger.info("")
+    
+    # Also print to stdout
+    print("")
+    print("=" * 80)
+    print("📧 PASSWORD RESET OTP (CHECK YOUR EMAIL)")
+    print("=" * 80)
+    print(f"📧 Email: {email}")
+    print(f"📧 OTP Code: {otp}")
+    print("=" * 80)
+    print("")
+    
+    return True
