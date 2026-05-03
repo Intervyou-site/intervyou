@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💻 Code Editor — IntervYou</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='/ide.css') }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/ide.css?v=fix001">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -154,6 +154,6 @@
             console.log('Editor element:', document.getElementById('editor'));
         });
     </script>
-    <script src="{{ url_for('static', path='/ide.js') }}?v=2.1"></script>
+    <script src="/static/ide.js?v=fix001"></script>
 </body>
 </html>
