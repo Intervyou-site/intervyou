@@ -31,6 +31,11 @@ class EmailService:
         
         if not self.is_configured:
             logger.warning("⚠️  Email service not configured - missing MAIL_USERNAME or MAIL_PASSWORD")
+            logger.warning(f"⚠️  MAIL_USERNAME present: {bool(self.mail_username)}")
+            logger.warning(f"⚠️  MAIL_PASSWORD present: {bool(self.mail_password)}")
+        else:
+            logger.info(f"✅ Email service configured - SMTP: {self.smtp_host}:{self.smtp_port}")
+            logger.info(f"✅ Sending from: {self.mail_from}")
     
     def send_email(self, to_email: str, subject: str, body_html: str, body_text: str = None) -> bool:
         """
@@ -47,9 +52,14 @@ class EmailService:
         """
         if not self.is_configured:
             logger.error("❌ Cannot send email - email service not configured")
+            logger.error(f"❌ MAIL_USERNAME: {bool(self.mail_username)}")
+            logger.error(f"❌ MAIL_PASSWORD: {bool(self.mail_password)}")
             return False
         
         try:
+            logger.info(f"📧 Attempting to send email to {to_email}")
+            logger.info(f"📧 SMTP: {self.smtp_host}:{self.smtp_port}")
+            
             # Create message
             msg = MIMEMultipart('alternative')
             msg['From'] = f"{self.mail_from_name} <{self.mail_from}>"
@@ -66,16 +76,28 @@ class EmailService:
             msg.attach(part2)
             
             # Connect to SMTP server and send
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+            logger.info(f"📧 Connecting to SMTP server...")
+            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30) as server:
+                logger.info(f"📧 Starting TLS...")
                 server.starttls()  # Secure the connection
+                logger.info(f"📧 Logging in as {self.mail_username}...")
                 server.login(self.mail_username, self.mail_password)
+                logger.info(f"📧 Sending message...")
                 server.send_message(msg)
             
             logger.info(f"✅ Email sent successfully to {to_email}")
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"❌ SMTP Authentication failed: {e}")
+            logger.error(f"❌ Check MAIL_USERNAME and MAIL_PASSWORD in Railway")
+            return False
+        except smtplib.SMTPException as e:
+            logger.error(f"❌ SMTP error: {e}")
+            return False
         except Exception as e:
             logger.error(f"❌ Failed to send email to {to_email}: {e}")
+            logger.error(f"❌ Error type: {type(e).__name__}")
             return False
     
     def send_password_reset_otp(self, to_email: str, otp: str, expiry_minutes: int = 10) -> bool:
