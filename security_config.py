@@ -148,20 +148,25 @@ security_logger = SecurityLogger()
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
     """Enforce HTTPS in production"""
     
+    # Paths exempt from HTTPS redirect (e.g., health checks)
+    EXEMPT_PATHS = ["/health"]
+    
     async def dispatch(self, request: Request, call_next):
         # Only enforce HTTPS in production
         if os.getenv("ENVIRONMENT") == "production":
-            # Check if request is not HTTPS
-            if request.url.scheme != "https":
-                # Check for proxy headers (common in cloud deployments)
-                forwarded_proto = request.headers.get("x-forwarded-proto")
-                if forwarded_proto != "https":
-                    # Redirect to HTTPS
-                    url = request.url.replace(scheme="https")
-                    return Response(
-                        status_code=301,
-                        headers={"Location": str(url)}
-                    )
+            # Skip HTTPS redirect for exempt paths (health checks, etc.)
+            if request.url.path not in self.EXEMPT_PATHS:
+                # Check if request is not HTTPS
+                if request.url.scheme != "https":
+                    # Check for proxy headers (common in cloud deployments)
+                    forwarded_proto = request.headers.get("x-forwarded-proto")
+                    if forwarded_proto != "https":
+                        # Redirect to HTTPS
+                        url = request.url.replace(scheme="https")
+                        return Response(
+                            status_code=301,
+                            headers={"Location": str(url)}
+                        )
         
         response = await call_next(request)
         return response
