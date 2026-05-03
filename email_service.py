@@ -9,9 +9,10 @@ import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-from dotenv import load_dotenv
 
-load_dotenv()
+# Force reload environment variables
+from dotenv import load_dotenv
+load_dotenv(override=True)  # Override existing env vars
 
 logger = logging.getLogger(__name__)
 

@@ -97,27 +97,40 @@ def send_password_reset_email(email: str, otp: str, expiry_minutes: int = 10) ->
     Send password reset email with OTP via Gmail SMTP
     Falls back to logging if email service is not configured
     """
+    email_sent = False
+    
     try:
         # Try to import and use email service
         from email_service import email_service
         
+        logger.info(f"📧 Email service configured: {email_service.is_configured}")
+        logger.info(f"📧 MAIL_USERNAME: {bool(email_service.mail_username)}")
+        logger.info(f"📧 MAIL_PASSWORD: {bool(email_service.mail_password)}")
+        
         if email_service.is_configured:
+            logger.info(f"📧 Attempting to send email via SMTP...")
             # Send actual email
             success = email_service.send_password_reset_otp(email, otp, expiry_minutes)
             
             if success:
                 logger.info(f"✅ Password reset OTP email sent to {email}")
+                email_sent = True
                 return True
             else:
                 logger.error(f"❌ Failed to send OTP email to {email}")
+                logger.error(f"❌ Check Railway logs for SMTP errors")
                 # Fall through to logging fallback
         else:
             logger.warning("⚠️  Email service not configured - falling back to logs")
+            logger.warning(f"⚠️  MAIL_USERNAME present: {bool(email_service.mail_username)}")
+            logger.warning(f"⚠️  MAIL_PASSWORD present: {bool(email_service.mail_password)}")
             # Fall through to logging fallback
     
-    except ImportError:
-        logger.warning("⚠️  Email service not available - falling back to logs")
+    except ImportError as e:
+        logger.error(f"⚠️  Email service import failed: {e}")
     except Exception as e:
+        logger.error(f"❌ Email service error: {e}")
+        logger.error(f"❌ Error type: {type(e).__name__}")
         logger.error(f"❌ Error sending email: {e}")
     
     # Fallback: Log OTP if email fails or is not configured
