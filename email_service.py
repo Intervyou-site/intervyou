@@ -10,13 +10,22 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-# Don't use dotenv in production - Railway provides env vars directly
-# Only load .env for local development
-if os.getenv("ENVIRONMENT") != "production":
-    from dotenv import load_dotenv
-    load_dotenv(override=True)
-
 logger = logging.getLogger(__name__)
+
+# Check if we're in production by looking for Railway-specific env vars
+# Railway always sets DATABASE_URL, so we can use that as a marker
+IS_PRODUCTION = bool(os.environ.get("DATABASE_URL", "").startswith("postgres"))
+
+# Only load .env for local development
+if not IS_PRODUCTION:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+        logger.info("📝 Loaded .env file for local development")
+    except ImportError:
+        logger.warning("⚠️  dotenv not available, using system environment variables")
+else:
+    logger.info("🚀 Production mode - using Railway environment variables")
 
 class EmailService:
     """Email service for sending OTP and notifications"""
