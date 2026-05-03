@@ -99,8 +99,24 @@ class EmailService:
             part2 = MIMEText(body_html, 'html')
             msg.attach(part2)
             
-            # Connect to SMTP server and send
-            logger.info(f"📧 Connecting to SMTP server...")
+            # Try port 465 with SSL first (more reliable on Railway)
+            if self.smtp_port == 587:
+                logger.info(f"📧 Trying port 465 with SSL (Railway-friendly)...")
+                try:
+                    with smtplib.SMTP_SSL(self.smtp_host, 465, timeout=30) as server:
+                        logger.info(f"📧 Connected via SSL on port 465")
+                        logger.info(f"📧 Logging in as {self.mail_username}...")
+                        server.login(self.mail_username, self.mail_password)
+                        logger.info(f"📧 Sending message...")
+                        server.send_message(msg)
+                    
+                    logger.info(f"✅ Email sent successfully to {to_email} (via port 465)")
+                    return True
+                except Exception as e:
+                    logger.warning(f"⚠️  Port 465 failed: {e}, trying port 587...")
+            
+            # Fallback to port 587 with STARTTLS
+            logger.info(f"📧 Connecting to SMTP server on port {self.smtp_port}...")
             with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30) as server:
                 logger.info(f"📧 Starting TLS...")
                 server.starttls()  # Secure the connection
@@ -115,6 +131,11 @@ class EmailService:
         except smtplib.SMTPAuthenticationError as e:
             logger.error(f"❌ SMTP Authentication failed: {e}")
             logger.error(f"❌ Check MAIL_USERNAME and MAIL_PASSWORD in Railway")
+            return False
+        except OSError as e:
+            logger.error(f"❌ Network error: {e}")
+            logger.error(f"❌ Railway might be blocking SMTP ports")
+            logger.error(f"❌ Try using port 465 with SSL or alternative email service")
             return False
         except smtplib.SMTPException as e:
             logger.error(f"❌ SMTP error: {e}")
