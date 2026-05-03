@@ -37,9 +37,9 @@ EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    PORT=8000 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
 
 # Run the cleaned application
-CMD ["sh", "-c", "python -m gunicorn fastapi_app_cleaned:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-10000} --timeout 120"]
+# Railway will inject PORT environment variable
+CMD ["sh", "-c", "python -m gunicorn fastapi_app_cleaned:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --timeout 120"]
