@@ -727,14 +727,14 @@ body {
 /* Template-Specific Resume Styles */
 .resume-preview.modern {
     display: grid;
-    grid-template-columns: 35% 65%;
+    grid-template-columns: 40% 60%;
     padding: 0;
 }
 
 .resume-preview.modern .resume-sidebar {
     background: #2563eb;
     color: white;
-    padding: 40px 30px;
+    padding: 40px 35px;
 }
 
 .resume-preview.modern .resume-main {
