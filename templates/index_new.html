@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" x-data="landingPage()" x-init="init()" :class="dark ? 'dark' : ''">
+<html lang="en" x-data="landingPage()" x-init="init()">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,90 +9,227 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   
   <style>
-    /* Landing Page Specific Styles */
+    /* Modern Landing Page Styles */
+    :root {
+      --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+    
+    body {
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      position: relative;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* Animated Background */
+    .animated-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    
+    .animated-bg::before,
+    .animated-bg::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+    
+    .animated-bg::before {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      top: -200px;
+      left: -200px;
+      animation-delay: 0s;
+    }
+    
+    .animated-bg::after {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      bottom: -200px;
+      right: -200px;
+      animation-delay: 10s;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(100px, -100px) scale(1.1); }
+      66% { transform: translate(-100px, 100px) scale(0.9); }
+    }
+    
+    /* Glass Navigation */
     .landing-nav {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 1000;
-      background-color: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border-primary);
-    }
-    
-    .dark .landing-nav {
-      background-color: rgba(15, 23, 42, 0.8);
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     }
     
     .landing-nav-content {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 1rem 2rem;
+      padding: 1.25rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     
+    /* Hero Section */
     .hero-section {
+      position: relative;
+      z-index: 1;
       max-width: 1280px;
       margin: 0 auto;
-      padding: 8rem 2rem 6rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
+      padding: 10rem 2rem 8rem;
+      text-align: center;
+    }
+    
+    .hero-badge {
+      display: inline-flex;
       align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.25rem;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+      animation: fadeInUp 0.8s ease-out;
+    }
+    
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
     }
     
     .hero-title {
-      font-size: 56px;
+      font-size: 72px;
       font-weight: 800;
       line-height: 1.1;
-      color: var(--text-primary);
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 1.5rem;
       letter-spacing: -0.03em;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
     }
     
     .hero-subtitle {
-      font-size: 20px;
+      font-size: 22px;
       line-height: 1.6;
-      color: var(--text-secondary);
-      margin-bottom: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 3rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      animation: fadeInUp 0.8s ease-out 0.4s both;
     }
     
     .hero-cta {
       display: flex;
       gap: 1rem;
       align-items: center;
+      justify-content: center;
+      margin-bottom: 3rem;
+      animation: fadeInUp 0.8s ease-out 0.6s both;
     }
     
-    .hero-image {
-      width: 100%;
-      border-radius: 1rem;
-      box-shadow: var(--shadow-xl);
-      border: 1px solid var(--border-primary);
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      margin-top: 4rem;
+      animation: fadeInUp 0.8s ease-out 0.8s both;
+    }
+    
+    .hero-stat {
+      text-align: center;
+    }
+    
+    .hero-stat-number {
+      font-size: 36px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    
+    .hero-stat-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* Feature Cards - Modern Glass Design */
     .features-section {
+      position: relative;
+      z-index: 1;
       max-width: 1280px;
       margin: 0 auto;
-      padding: 6rem 2rem;
+      padding: 8rem 2rem;
     }
     
     .section-title {
-      font-size: 36px;
+      font-size: 48px;
       font-weight: 700;
       text-align: center;
-      color: var(--text-primary);
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 1rem;
       letter-spacing: -0.02em;
     }
     
     .section-subtitle {
-      font-size: 18px;
+      font-size: 20px;
       text-align: center;
-      color: var(--text-secondary);
-      margin-bottom: 4rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 5rem;
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
@@ -105,95 +242,270 @@
     }
     
     .feature-card {
-      background-color: var(--bg-primary);
-      border: 1px solid var(--border-primary);
-      border-radius: var(--radius-lg);
-      padding: 2rem;
-      transition: all var(--transition-base);
+      position: relative;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 2.5rem;
+      backdrop-filter: blur(20px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #4facfe, transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
     }
     
     .feature-card:hover {
-      box-shadow: var(--shadow-lg);
-      transform: translateY(-4px);
+      transform: translateY(-8px);
+      border-color: rgba(79, 172, 254, 0.3);
+      box-shadow: 0 20px 60px rgba(79, 172, 254, 0.2);
+    }
+    
+    .feature-card:hover::before {
+      opacity: 1;
     }
     
     .feature-icon {
-      width: 48px;
-      height: 48px;
-      background-color: var(--accent-light);
-      border-radius: var(--radius-md);
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 1.5rem;
+      box-shadow: 0 8px 24px rgba(79, 172, 254, 0.3);
     }
     
     .feature-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.5rem;
+      color: #ffffff;
+      margin-bottom: 0.75rem;
     }
     
     .feature-description {
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.6);
     }
     
-    .cta-section {
-      max-width: 1280px;
+    /* Product Preview with Floating Effect */
+    .preview-section {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 6rem 2rem;
+    }
+    
+    .preview-container {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
+      animation: floatPreview 6s ease-in-out infinite;
+    }
+    
+    @keyframes floatPreview {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    .preview-image {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* CTA Section with Gradient */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 8rem 2rem;
       text-align: center;
     }
     
     .cta-box {
-      background-color: var(--bg-primary);
-      border: 1px solid var(--border-primary);
-      border-radius: var(--radius-xl);
-      padding: 4rem 2rem;
-      box-shadow: var(--shadow-lg);
+      position: relative;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 32px;
+      padding: 5rem 3rem;
+      backdrop-filter: blur(20px);
+      overflow: hidden;
     }
     
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(79, 172, 254, 0.1) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .cta-box > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Enhanced Buttons */
+    .btn-primary {
+      position: relative;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: #ffffff;
+      font-weight: 600;
+      padding: 1rem 2.5rem;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 8px 24px rgba(79, 172, 254, 0.4);
+      overflow: hidden;
+    }
+    
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(79, 172, 254, 0.5);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-weight: 600;
+      padding: 1rem 2.5rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 1;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 3rem 2rem;
+      margin-top: 4rem;
+    }
+    
+    /* Responsive Design */
     @media (max-width: 1024px) {
-      .hero-section {
-        grid-template-columns: 1fr;
-        padding-top: 6rem;
-      }
-      
       .hero-title {
-        font-size: 42px;
+        font-size: 48px;
       }
       
       .feature-grid {
         grid-template-columns: 1fr;
       }
+      
+      .hero-stats {
+        flex-direction: column;
+        gap: 2rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .hero-section {
+        padding: 8rem 1.5rem 6rem;
+      }
+      
+      .hero-title {
+        font-size: 36px;
+      }
+      
+      .hero-subtitle {
+        font-size: 18px;
+      }
+      
+      .hero-cta {
+        flex-direction: column;
+      }
+      
+      .section-title {
+        font-size: 32px;
+      }
+    }
+    
+    /* Scroll Animations */
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease-out;
+    }
+    
+    .fade-in-up.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
 </head>
 <body>
+  <!-- Animated Background -->
+  <div class="animated-bg"></div>
+
   <!-- Navigation -->
   <nav class="landing-nav">
     <div class="landing-nav-content">
       <a href="/" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none;">
-        <img src="/static/intervyou-logo.png" alt="IntervYou" style="height: 32px; width: auto;">
+        <img src="/static/intervyou-logo.svg" alt="IntervYou" style="height: 36px; width: auto;">
       </a>
       
       <div style="display: flex; align-items: center; gap: 1rem;">
-        <button @click="toggleTheme()" class="btn btn-ghost btn-sm">
-          <svg x-show="!dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-          </svg>
-          <svg x-show="dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-          </svg>
-        </button>
         {% if not user %}
-        <a href="/login" class="btn btn-ghost btn-sm">Sign In</a>
-        <a href="/register" class="btn btn-primary btn-sm">Get Started</a>
+        <a href="/login" class="btn-secondary" style="padding: 0.75rem 1.5rem; text-decoration: none; display: inline-block;">Sign In</a>
+        <a href="/login?mode=register" class="btn-primary" style="padding: 0.75rem 1.5rem; text-decoration: none; display: inline-block;">Get Started</a>
         {% else %}
-        <a href="/report" class="btn btn-primary btn-sm">Dashboard</a>
+        <a href="/report" class="btn-primary" style="padding: 0.75rem 1.5rem; text-decoration: none; display: inline-block;">Dashboard</a>
         {% endif %}
       </div>
     </div>
@@ -201,122 +513,103 @@
 
   <!-- Hero Section -->
   <section class="hero-section">
-    <div>
-      <h1 class="hero-title">AI-Powered Interview Intelligence Platform</h1>
-      <p class="hero-subtitle">
-        Master your interviews with intelligent practice sessions, real-time AI feedback, and personalized coaching. Built for professionals who demand excellence.
-      </p>
-      <div class="hero-cta">
-        <a href="/register" class="btn btn-primary btn-lg">Start Practicing</a>
-        <a href="/practice" class="btn btn-secondary btn-lg">View Demo</a>
-      </div>
-      
-      <div style="margin-top: 2rem; display: flex; align-items: center; gap: 2rem; color: var(--text-tertiary); font-size: 13px;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <svg class="w-5 h-5" style="color: var(--success);" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <span>No credit card required</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <svg class="w-5 h-5" style="color: var(--success);" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <span>Free to start</span>
-        </div>
-      </div>
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      <span>AI-Powered Interview Intelligence</span>
     </div>
     
-    <div>
-      <div class="hero-image" style="aspect-ratio: 16/10; background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary);">
-        <svg class="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
+    <h1 class="hero-title">Master Your Interviews<br>With AI Precision</h1>
+    
+    <p class="hero-subtitle">
+      Transform your interview preparation with intelligent practice sessions, real-time AI feedback, 
+      and personalized coaching. Built for professionals who demand excellence.
+    </p>
+    
+    <div class="hero-cta">
+      <a href="/login?mode=register" class="btn-primary btn-lg" style="text-decoration: none; display: inline-block;">Start Practicing Free</a>
+      <a href="/practice" class="btn-secondary btn-lg" style="text-decoration: none; display: inline-block;">View Live Demo</a>
+    </div>
+    
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-number">6+</div>
+        <div class="hero-stat-label">Interview Categories</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-number">5</div>
+        <div class="hero-stat-label">Programming Languages</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-number">100%</div>
+        <div class="hero-stat-label">Free to Start</div>
       </div>
     </div>
   </section>
 
   <!-- Features Section -->
   <section class="features-section">
-    <h2 class="section-title">Everything you need to ace your interviews</h2>
-    <p class="section-subtitle">Comprehensive tools and AI-powered insights to prepare you for any interview scenario</p>
+    <h2 class="section-title">Everything you need to ace interviews</h2>
+    <p class="section-subtitle">Comprehensive AI-powered tools designed for modern interview preparation</p>
     
     <div class="feature-grid">
-      <div class="feature-card">
+      <div class="feature-card fade-in-up">
         <div class="feature-icon">
-          <svg class="w-6 h-6" style="color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-8 h-8" style="color: #ffffff; width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
           </svg>
         </div>
         <h3 class="feature-title">AI-Powered Feedback</h3>
-        <p class="feature-description">Get instant, detailed feedback on your answers with advanced NLP analysis covering clarity, structure, and technical depth.</p>
+        <p class="feature-description">Get instant, detailed feedback with advanced NLP analysis covering clarity, structure, and technical depth.</p>
       </div>
       
-      <div class="feature-card">
+      <div class="feature-card fade-in-up" style="animation-delay: 0.1s;">
         <div class="feature-icon">
-          <svg class="w-6 h-6" style="color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-8 h-8" style="color: #ffffff; width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
           </svg>
         </div>
         <h3 class="feature-title">Video Interview Practice</h3>
-        <p class="feature-description">Simulate real interview conditions with video recording, AI analysis of body language, and speech patterns.</p>
+        <p class="feature-description">Simulate real conditions with video recording and AI analysis of body language and speech patterns.</p>
       </div>
       
-      <div class="feature-card">
+      <div class="feature-card fade-in-up" style="animation-delay: 0.2s;">
         <div class="feature-icon">
-          <svg class="w-6 h-6" style="color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-8 h-8" style="color: #ffffff; width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
         </div>
         <h3 class="feature-title">Performance Analytics</h3>
-        <p class="feature-description">Track your progress with detailed analytics, category-wise performance metrics, and improvement trends over time.</p>
+        <p class="feature-description">Track progress with detailed analytics, category-wise metrics, and improvement trends.</p>
       </div>
       
-      <div class="feature-card">
+      <div class="feature-card fade-in-up" style="animation-delay: 0.3s;">
         <div class="feature-icon">
-          <svg class="w-6 h-6" style="color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-8 h-8" style="color: #ffffff; width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
         </div>
-        <h3 class="feature-title">Resume Analysis</h3>
-        <p class="feature-description">Optimize your resume with ATS scoring, keyword matching, and formatting suggestions to pass initial screenings.</p>
+        <h3 class="feature-title">Smart Resume Builder</h3>
+        <p class="feature-description">Create ATS-optimized resumes with AI-powered suggestions and professional templates.</p>
       </div>
       
-      <div class="feature-card">
+      <div class="feature-card fade-in-up" style="animation-delay: 0.4s;">
         <div class="feature-icon">
-          <svg class="w-6 h-6" style="color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-8 h-8" style="color: #ffffff; width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
           </svg>
         </div>
-        <h3 class="feature-title">Code Editor</h3>
-        <p class="feature-description">Practice technical interviews with an integrated code editor supporting multiple languages and real-time execution.</p>
+        <h3 class="feature-title">Integrated Code Editor</h3>
+        <p class="feature-description">Practice technical interviews with multi-language support and real-time code execution.</p>
       </div>
       
-      <div class="feature-card">
+      <div class="feature-card fade-in-up" style="animation-delay: 0.5s;">
         <div class="feature-icon">
-          <svg class="w-6 h-6" style="color: var(--accent-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          <svg class="w-8 h-8" style="color: #ffffff; width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
           </svg>
         </div>
         <h3 class="feature-title">Personalized Coaching</h3>
-        <p class="feature-description">Receive AI-driven recommendations and personalized learning paths based on your performance and goals.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Product Preview Section -->
-  <section class="features-section" style="background-color: var(--bg-primary);">
-    <h2 class="section-title">Built for modern interview preparation</h2>
-    <p class="section-subtitle">Clean, intuitive interface designed for focused practice and rapid improvement</p>
-    
-    <div style="max-width: 900px; margin: 0 auto;">
-      <div class="hero-image" style="aspect-ratio: 16/9; background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary);">
-        <div style="text-align: center;">
-          <svg class="w-24 h-24" style="margin: 0 auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          <p style="margin-top: 1rem; font-size: 14px;">Dashboard Preview</p>
-        </div>
+        <p class="feature-description">Receive AI-driven recommendations and custom learning paths based on your performance.</p>
       </div>
     </div>
   </section>
@@ -324,26 +617,26 @@
   <!-- CTA Section -->
   <section class="cta-section">
     <div class="cta-box">
-      <h2 class="section-title" style="margin-bottom: 1rem;">Ready to master your interviews?</h2>
-      <p class="section-subtitle" style="margin-bottom: 2rem;">Join thousands of professionals who have improved their interview skills with IntervYou</p>
-      <div style="display: flex; gap: 1rem; justify-content: center;">
-        <a href="/register" class="btn btn-primary btn-lg">Get Started Free</a>
-        <a href="/practice" class="btn btn-secondary btn-lg">Try Demo</a>
+      <h2 class="section-title" style="margin-bottom: 1.5rem;">Ready to master your interviews?</h2>
+      <p class="section-subtitle" style="margin-bottom: 3rem;">Join thousands of professionals who have transformed their interview skills</p>
+      <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/login?mode=register" class="btn-primary btn-lg" style="text-decoration: none; display: inline-block;">Get Started Free</a>
+        <a href="/practice" class="btn-secondary btn-lg" style="text-decoration: none; display: inline-block;">Try Demo</a>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer style="background-color: var(--bg-primary); border-top: 1px solid var(--border-primary); padding: 3rem 2rem; margin-top: 4rem;">
-    <div style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <img src="/static/intervyou-logo.png" alt="IntervYou" style="height: 32px; width: auto;">
+  <footer>
+    <div style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <img src="/static/intervyou-logo.svg" alt="IntervYou" style="height: 36px; width: auto;">
         <div>
-          <div style="font-size: 12px; color: var(--text-tertiary);">AI Interview Intelligence Platform</div>
+          <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5);">AI Interview Platform</div>
         </div>
       </div>
-      <div style="font-size: 13px; color: var(--text-tertiary);">
-        © {{ now().year if now else '2025' }} IntervYou. All rights reserved.
+      <div style="font-size: 14px; color: rgba(255, 255, 255, 0.5);">
+        © 2025 IntervYou. All rights reserved.
       </div>
     </div>
   </footer>
@@ -351,26 +644,26 @@
   <script>
     function landingPage() {
       return {
-        dark: false,
+        dark: true,
         
         init() {
-          const savedTheme = localStorage.getItem('iv_theme');
-          this.dark = savedTheme === 'dark';
-          this.applyTheme();
+          this.setupScrollAnimations();
         },
         
-        toggleTheme() {
-          this.dark = !this.dark;
-          localStorage.setItem('iv_theme', this.dark ? 'dark' : 'light');
-          this.applyTheme();
-        },
-        
-        applyTheme() {
-          if (this.dark) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+        setupScrollAnimations() {
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+              }
+            });
+          }, {
+            threshold: 0.1
+          });
+          
+          document.querySelectorAll('.fade-in-up').forEach(el => {
+            observer.observe(el);
+          });
         }
       };
     }

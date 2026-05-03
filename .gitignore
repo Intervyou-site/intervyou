@@ -75,7 +75,6 @@ data/
 *_FIX*.md
 *_IMPLEMENTATION.md
 *_SUMMARY.md
-*_GUIDE.md
 *_INSTRUCTIONS.md
 *_ANALYSIS.md
 *_ENHANCED.md
@@ -85,6 +84,11 @@ data/
 START_*.txt
 SUCCESS_*.txt
 RUN_*.txt
+
+# Keep security documentation
+!SECURITY*.md
+!SECRETS_REMEDIATION_GUIDE.md
+!IMMEDIATE_ACTION_PLAN.md
 
 # Audio/Video uploads
 static/audio/

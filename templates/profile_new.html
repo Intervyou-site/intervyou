@@ -47,7 +47,7 @@
     
     <!-- Actions -->
     <div style="display: flex; gap: var(--spacing-sm);">
-      <button class="btn btn-secondary">Edit Profile</button>
+      <button class="btn btn-secondary" onclick="openEditProfileModal()">Edit Profile</button>
       <button class="btn btn-ghost">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -230,11 +230,11 @@
         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Member Since</div>
         <div style="font-size: 14px; color: var(--text-primary);">
           {% if user and user.created_at %}
-            {{ user.created_at.strftime('%B %Y') }}
+            {{ user.created_at }}
           {% elif user and user.joined %}
             {{ user.joined }}
           {% else %}
-            Not available
+            Recently
           {% endif %}
         </div>
       </div>
@@ -252,31 +252,128 @@
       <p class="card-subtitle">Your milestones and badges</p>
     </div>
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md);">
-      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+      <!-- First Win -->
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); {% if not (user.achievements and user.achievements.first_win) %}opacity: 0.4;{% endif %}">
         <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🏆</div>
         <div style="font-size: 12px; color: var(--text-secondary);">First Win</div>
+        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">{% if user.achievements and user.achievements.first_win %}Unlocked!{% else %}Score 7+ once{% endif %}</div>
       </div>
-      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+      
+      <!-- 7 Day Streak -->
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); {% if not (user.achievements and user.achievements.seven_day_streak) %}opacity: 0.4;{% endif %}">
         <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🔥</div>
         <div style="font-size: 12px; color: var(--text-secondary);">7 Day Streak</div>
+        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">{% if user.achievements and user.achievements.seven_day_streak %}Unlocked!{% else %}Practice 7 days{% endif %}</div>
       </div>
-      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+      
+      <!-- Perfect Score -->
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); {% if not (user.achievements and user.achievements.perfect_score) %}opacity: 0.4;{% endif %}">
         <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">⭐</div>
         <div style="font-size: 12px; color: var(--text-secondary);">Perfect Score</div>
+        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">{% if user.achievements and user.achievements.perfect_score %}Unlocked!{% else %}Score 9.5+{% endif %}</div>
       </div>
-      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+      
+      <!-- 50 Questions -->
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); {% if not (user.achievements and user.achievements.fifty_questions) %}opacity: 0.4;{% endif %}">
         <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">📚</div>
         <div style="font-size: 12px; color: var(--text-secondary);">50 Questions</div>
+        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">{% if user.achievements and user.achievements.fifty_questions %}Unlocked!{% else %}{{ user.attempts if user and user.attempts else 0 }}/50{% endif %}</div>
       </div>
-      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+      
+      <!-- Category Master -->
+      <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); {% if not (user.achievements and user.achievements.category_master) %}opacity: 0.4;{% endif %}">
         <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🎯</div>
         <div style="font-size: 12px; color: var(--text-secondary);">Category Master</div>
+        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">{% if user.achievements and user.achievements.category_master %}Unlocked!{% else %}Master 3 categories{% endif %}</div>
       </div>
+      
+      <!-- Locked (Future Achievement) -->
       <div style="text-align: center; padding: var(--spacing-md); background-color: var(--bg-secondary); border-radius: var(--radius-md); opacity: 0.4;">
         <div style="font-size: 32px; margin-bottom: var(--spacing-xs);">🚀</div>
-        <div style="font-size: 12px; color: var(--text-secondary);">Locked</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Coming Soon</div>
+        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">Stay tuned!</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div style="background-color: var(--bg-primary); border-radius: var(--radius-lg); max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+    <div style="padding: var(--spacing-xl); border-bottom: 1px solid var(--border-primary);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 20px; font-weight: 700; color: var(--text-primary);">Edit Profile</h3>
+        <button onclick="closeEditProfileModal()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 4px;">
+          <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <form id="editProfileForm" style="padding: var(--spacing-xl);">
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
+        <!-- Name -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: var(--spacing-xs);">
+            Full Name
+          </label>
+          <input type="text" id="editName" name="name" value="{{ user.name if user and user.name else '' }}" required
+                 style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+        </div>
+        
+        <!-- Email (read-only) -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: var(--spacing-xs);">
+            Email Address
+          </label>
+          <input type="email" value="{{ user.email if user and user.email else '' }}" readonly
+                 style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background-color: var(--bg-tertiary); color: var(--text-secondary); font-size: 14px; cursor: not-allowed;">
+          <p style="font-size: 12px; color: var(--text-tertiary); margin-top: var(--spacing-xs);">Email cannot be changed</p>
+        </div>
+        
+        <!-- Current Password (for verification) -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: var(--spacing-xs);">
+            Current Password
+          </label>
+          <input type="password" id="editCurrentPassword" name="current_password" placeholder="Enter current password to save changes"
+                 style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+        </div>
+        
+        <!-- New Password (optional) -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: var(--spacing-xs);">
+            New Password (optional)
+          </label>
+          <input type="password" id="editNewPassword" name="new_password" placeholder="Leave blank to keep current password"
+                 style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+          <p style="font-size: 12px; color: var(--text-tertiary); margin-top: var(--spacing-xs);">Minimum 6 characters</p>
+        </div>
+        
+        <!-- Confirm New Password -->
+        <div id="confirmPasswordDiv" style="display: none;">
+          <label style="display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: var(--spacing-xs);">
+            Confirm New Password
+          </label>
+          <input type="password" id="editConfirmPassword" name="confirm_password" placeholder="Confirm new password"
+                 style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+        </div>
+      </div>
+      
+      <!-- Error/Success Message -->
+      <div id="editProfileMessage" style="display: none; margin-top: var(--spacing-lg); padding: var(--spacing-md); border-radius: var(--radius-md); font-size: 14px;"></div>
+      
+      <!-- Actions -->
+      <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-xl);">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">
+          Save Changes
+        </button>
+        <button type="button" onclick="closeEditProfileModal()" class="btn btn-secondary" style="flex: 1;">
+          Cancel
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -344,5 +441,113 @@
       }
     });
   }
+  
+  // Edit Profile Modal Functions
+  function openEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function closeEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('editProfileForm').reset();
+    document.getElementById('editProfileMessage').style.display = 'none';
+    document.getElementById('confirmPasswordDiv').style.display = 'none';
+  }
+  
+  // Show confirm password field when new password is entered
+  document.getElementById('editNewPassword').addEventListener('input', function() {
+    const confirmDiv = document.getElementById('confirmPasswordDiv');
+    if (this.value.length > 0) {
+      confirmDiv.style.display = 'block';
+    } else {
+      confirmDiv.style.display = 'none';
+      document.getElementById('editConfirmPassword').value = '';
+    }
+  });
+  
+  // Handle form submission
+  document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const messageDiv = document.getElementById('editProfileMessage');
+    const name = document.getElementById('editName').value.trim();
+    const currentPassword = document.getElementById('editCurrentPassword').value;
+    const newPassword = document.getElementById('editNewPassword').value;
+    const confirmPassword = document.getElementById('editConfirmPassword').value;
+    
+    // Validation
+    if (!name) {
+      showMessage('Please enter your name', 'error');
+      return;
+    }
+    
+    if (!currentPassword) {
+      showMessage('Please enter your current password to save changes', 'error');
+      return;
+    }
+    
+    if (newPassword && newPassword.length < 6) {
+      showMessage('New password must be at least 6 characters', 'error');
+      return;
+    }
+    
+    if (newPassword && newPassword !== confirmPassword) {
+      showMessage('New passwords do not match', 'error');
+      return;
+    }
+    
+    // Submit form
+    try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('current_password', currentPassword);
+      if (newPassword) {
+        formData.append('new_password', newPassword);
+      }
+      
+      const response = await fetch('/api/update-profile', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        showMessage('Profile updated successfully!', 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        showMessage(data.detail || 'Failed to update profile', 'error');
+      }
+    } catch (error) {
+      showMessage('An error occurred. Please try again.', 'error');
+    }
+  });
+  
+  function showMessage(message, type) {
+    const messageDiv = document.getElementById('editProfileMessage');
+    messageDiv.textContent = message;
+    messageDiv.style.display = 'block';
+    
+    if (type === 'success') {
+      messageDiv.style.backgroundColor = 'var(--success-light)';
+      messageDiv.style.color = 'var(--success)';
+      messageDiv.style.border = '1px solid var(--success)';
+    } else {
+      messageDiv.style.backgroundColor = 'var(--error-light)';
+      messageDiv.style.color = 'var(--error)';
+      messageDiv.style.border = '1px solid var(--error)';
+    }
+  }
+  
+  // Close modal on outside click
+  document.getElementById('editProfileModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeEditProfileModal();
+    }
+  });
 </script>
 {% endblock %}

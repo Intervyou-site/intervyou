@@ -146,10 +146,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (languageSelect) {
         languageSelect.addEventListener('change', (e) => {
             currentLanguage = e.target.value;
+            console.log('Language changed to:', currentLanguage);
             if (editor && editor.getModel && typeof monaco !== 'undefined') {
                 monaco.editor.setModelLanguage(editor.getModel(), languageMap[currentLanguage]);
             }
             loadTemplate();
+            loadChallenges(); // Reload challenges for the new language
         });
     }
 
@@ -411,8 +413,10 @@ function clearEditor() {
 
 async function loadChallenges() {
     try {
-        const response = await fetch('/ide/challenges');
+        console.log('Loading challenges for language:', currentLanguage);
+        const response = await fetch(`/ide/challenges?language=${currentLanguage}`);
         const data = await response.json();
+        console.log('Received challenges:', data);
         
         const challengesList = document.getElementById('challengesList');
         challengesList.innerHTML = data.challenges.map(challenge => `
@@ -422,6 +426,7 @@ async function loadChallenges() {
                 <div class="challenge-difficulty">${challenge.difficulty}</div>
             </div>
         `).join('');
+        console.log('Challenges updated successfully');
     } catch (error) {
         console.error('Failed to load challenges:', error);
     }
@@ -429,7 +434,19 @@ async function loadChallenges() {
 
 async function loadChallenge(challengeId) {
     try {
+        // Check if editor is initialized
+        if (!editor) {
+            showNotification('Editor is still loading, please wait...', 'warning');
+            // Retry after a short delay
+            setTimeout(() => loadChallenge(challengeId), 500);
+            return;
+        }
+        
         const response = await fetch(`/ide/challenges/${challengeId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const challenge = await response.json();
         
         // Show challenge description
@@ -453,7 +470,8 @@ Write your solution below:
         showNotification(`Loaded: ${challenge.title}`, 'success');
         
     } catch (error) {
-        showNotification('Failed to load challenge', 'error');
+        console.error('Error loading challenge:', error);
+        showNotification('Failed to load challenge: ' + error.message, 'error');
     }
 }
 

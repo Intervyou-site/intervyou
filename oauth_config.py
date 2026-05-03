@@ -1,20 +1,27 @@
-# oauth_config.py
 """
 OAuth Configuration for Social Login
 Supports Google OAuth 2.0
 """
 
 import os
+from dotenv import load_dotenv
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
 # Load environment variables
-config = Config('.env')
+load_dotenv()
 
-# Initialize OAuth
-oauth = OAuth(config)
+# Create Starlette config with OAuth credentials
+config_data = {
+    'GOOGLE_CLIENT_ID': os.getenv('GOOGLE_CLIENT_ID'),
+    'GOOGLE_CLIENT_SECRET': os.getenv('GOOGLE_CLIENT_SECRET')
+}
+starlette_config = Config(environ=config_data)
 
-# Google OAuth
+# Initialize OAuth with config
+oauth = OAuth(starlette_config)
+
+# Register Google OAuth
 oauth.register(
     name='google',
     client_id=os.getenv('GOOGLE_CLIENT_ID'),

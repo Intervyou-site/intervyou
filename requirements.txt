@@ -25,6 +25,8 @@ python-dotenv>=1.0.1
 # ---- Security ----
 passlib[argon2]>=1.7.4
 itsdangerous>=2.2.0
+authlib>=1.3.0  # OAuth support (Google login)
+python-jose[cryptography]>=3.3.0  # JWT tokens
 
 # ---- Audio Processing (Essential for voice analysis) ----
 librosa>=0.10.2

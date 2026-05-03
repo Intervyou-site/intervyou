@@ -57,7 +57,7 @@ solution();
         "docker_image": "eclipse-temurin:17-jdk-alpine",
         "compile_cmd": "javac {file}",
         "run_cmd": "java Main",
-        "timeout": 15,
+        "timeout": 30,  # Increased for compilation time
         "memory_limit": "256m",
         "template": '''public class Main {
     public static void main(String[] args) {
@@ -83,7 +83,7 @@ solution();
         "docker_image": "gcc:11",
         "compile_cmd": "g++ -o program {file}",
         "run_cmd": "./program",
-        "timeout": 15,
+        "timeout": 30,  # Increased for compilation time
         "memory_limit": "256m",
         "template": '''#include <iostream>
 using namespace std;
@@ -107,7 +107,7 @@ int main() {
         "docker_image": "gcc:11",
         "compile_cmd": "gcc -o program {file}",
         "run_cmd": "./program",
-        "timeout": 15,
+        "timeout": 30,  # Increased for compilation time
         "memory_limit": "256m",
         "template": '''#include <stdio.h>
 

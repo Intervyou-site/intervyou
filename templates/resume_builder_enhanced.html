@@ -1,0 +1,538 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Resume Builder - IntervYou{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.css">
+<style>
+  :root {
+    --skill-beginner: #94a3b8;
+    --skill-intermediate: #60a5fa;
+    --skill-advanced: #8b5cf6;
+    --skill-expert: #ec4899;
+  }
+  
+  .resume-builder {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  
+  @media (max-width: 1200px) {
+    .resume-builder {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Left Panel - Form */
+  .resume-form {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+  
+  /* Right Panel - Preview */
+  .resume-preview-panel {
+    position: sticky;
+    top: var(--spacing-lg);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+  
+  /* Template Gallery */
+  .template-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .template-card {
+    border: 2px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  
+  .template-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+  }
+  
+  .template-card.active {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-primary);
+    color: white;
+  }
+  
+  .template-preview-img {
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  
+  /* Drag & Drop Sections */
+  .sortable-section {
+    cursor: move;
+    transition: all 0.2s;
+  }
+  
+  .sortable-section:hover {
+    background-color: var(--bg-secondary);
+  }
+  
+  .sortable-ghost {
+    opacity: 0.4;
+    background-color: var(--accent-primary);
+  }
+  
+  .drag-handle {
+    cursor: grab;
+    color: var(--text-tertiary);
+    margin-right: var(--spacing-sm);
+  }
+  
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+  
+  /* Skills with Proficiency */
+  .skill-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+  }
+  
+  .skill-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .skill-proficiency {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .skill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--border-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .skill-dot.active {
+    background-color: var(--accent-primary);
+    transform: scale(1.2);
+  }
+  
+  .skill-dot:hover {
+    transform: scale(1.3);
+  }
+  
+  /* Auto-save Indicator */
+  .autosave-indicator {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-full);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  .autosave-indicator.show {
+    opacity: 1;
+  }
+  
+  .autosave-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Action Buttons */
+  .action-bar {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+  }
+  
+  /* PDF Import Zone */
+  .pdf-import-zone {
+    border: 2px dashed var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .pdf-import-zone:hover {
+    border-color: var(--accent-primary);
+    background-color: var(--bg-secondary);
+  }
+  
+  .pdf-import-zone.dragover {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-primary);
+    color: white;
+  }
+  
+  /* Character Counter */
+  .char-counter {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-align: right;
+    margin-top: 4px;
+  }
+  
+  .char-counter.warning {
+    color: var(--warning);
+  }
+  
+  .char-counter.error {
+    color: var(--danger);
+  }
+  
+  /* ATS Score Enhancement */
+  .ats-score-card {
+    background: linear-gradient(135deg, var(--accent-primary), #1D4ED8);
+    color: white;
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+  }
+  
+  .score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 auto var(--spacing-md);
+    position: relative;
+  }
+  
+  .score-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .score-ring-fill {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 4px solid white;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    transform: rotate(-90deg);
+    transition: transform 0.5s ease;
+  }
+  
+  /* Resume Preview Styles */
+  .resume-document {
+    background-color: white;
+    color: #000;
+    padding: 40px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xl);
+    font-family: 'Times New Roman', serif;
+    min-height: 1056px; /* A4 height */
+    max-width: 816px; /* A4 width */
+    margin: 0 auto;
+  }
+  
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+  }
+  
+  .toolbar-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-primary);
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  
+  .toolbar-btn:hover {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+  }
+  
+  /* Modal for JSON Import/Export */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  
+  .modal-overlay.show {
+    display: flex;
+  }
+  
+  .modal-content {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .modal-title {
+    font-size: 20px;
+    font-weight: 600;
+  }
+  
+  .modal-close {
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+  }
+  
+  .modal-close:hover {
+    background: var(--bg-secondary);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">🚀 Enhanced Resume Builder</h1>
+  <p class="page-subtitle">Create ATS-optimized resumes with AI-powered suggestions</p>
+</div>
+
+<!-- Auto-save Indicator -->
+<div class="autosave-indicator" id="autosaveIndicator">
+  <div class="autosave-spinner"></div>
+  <span>Saving...</span>
+</div>
+
+<div class="resume-builder">
+  <!-- Left Panel: Form -->
+  <div class="resume-form">
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="toolbar-btn" onclick="importJSON()" title="Import from JSON">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        Import
+      </button>
+      <button class="toolbar-btn" onclick="exportJSON()" title="Export to JSON">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+        </svg>
+        Export
+      </button>
+      <button class="toolbar-btn" onclick="undoAction()" title="Undo" id="undoBtn" disabled>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+        </svg>
+        Undo
+      </button>
+      <button class="toolbar-btn" onclick="redoAction()" title="Redo" id="redoBtn" disabled>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6-6m6 6l-6 6"/>
+        </svg>
+        Redo
+      </button>
+      <button class="toolbar-btn" onclick="clearAll()" title="Clear All">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        Clear
+      </button>
+    </div>
+    
+    <!-- PDF Import Zone -->
+    <div class="pdf-import-zone" id="pdfImportZone" onclick="document.getElementById('pdfFileInput').click()">
+      <svg class="w-12 h-12" style="margin: 0 auto var(--spacing-sm); color: var(--text-tertiary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+      </svg>
+      <div style="font-weight: 600; margin-bottom: 4px;">Import Existing Resume</div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Drop PDF here or click to browse</div>
+      <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" onchange="handlePDFUpload(event)">
+    </div>
+    
+    <!-- Template Gallery -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 010 2H6v10h4a1 1 0 110 2H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v12a1 1 0 01-1 1h-4a1 1 0 110-2h3V6h-3a1 1 0 01-1-1z"/>
+        </svg>
+        Choose Template
+      </h3>
+      
+      <div class="template-gallery">
+        <div class="template-card active" onclick="selectTemplate('modern_blue')" data-template="modern_blue">
+          <div class="template-preview-img">📄</div>
+          <div style="font-size: 12px; font-weight: 500;">Modern</div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('classic')" data-template="classic">
+          <div class="template-preview-img">📋</div>
+          <div style="font-size: 12px; font-weight: 500;">Classic</div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('creative_dark')" data-template="creative_dark">
+          <div class="template-preview-img">🎨</div>
+          <div style="font-size: 12px; font-weight: 500;">Creative</div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('clean_minimal')" data-template="clean_minimal">
+          <div class="template-preview-img">✨</div>
+          <div style="font-size: 12px; font-weight: 500;">Minimal</div>
+        </div>
+        <div class="template-card" onclick="selectTemplate('purple_accent')" data-template="purple_accent">
+          <div class="template-preview-img">💜</div>
+          <div style="font-size: 12px; font-weight: 500;">Purple</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sortable Sections Container -->
+    <div id="sortableSections">
+      <!-- Sections will be dynamically added here -->
+    </div>
+    
+    <!-- Download Buttons -->
+    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-xl);">
+      <button class="btn btn-primary" onclick="analyzeResume()" style="flex: 1;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        Analyze ATS Score
+      </button>
+      <button class="btn btn-secondary" onclick="downloadPDF()" style="flex: 1;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Download PDF
+      </button>
+    </div>
+  </div>
+  
+  <!-- Right Panel: Preview -->
+  <div class="resume-preview-panel">
+    <!-- ATS Score Card -->
+    <div class="ats-score-card">
+      <div class="score-circle">
+        <div class="score-ring"></div>
+        <div class="score-ring-fill" id="scoreRingFill"></div>
+        <span id="atsScore">0</span>
+      </div>
+      <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">ATS Compatibility Score</div>
+      <div style="font-size: 13px; opacity: 0.9;">Click "Analyze" for detailed feedback</div>
+    </div>
+    
+    <!-- Resume Preview -->
+    <div class="resume-document" id="resumePreview">
+      <div style="text-align: center; padding: 40px; color: #999;">
+        <svg style="width: 64px; height: 64px; margin: 0 auto 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Start Building Your Resume</div>
+        <div style="font-size: 14px;">Fill in your information to see a live preview</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Import/Export Modal -->
+<div class="modal-overlay" id="jsonModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Import/Export JSON</h3>
+      <div class="modal-close" onclick="closeModal()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+    </div>
+    <div id="modalBody">
+      <!-- Content will be dynamically added -->
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="/static/resume-builder-enhanced.js"></script>
+{% endblock %}

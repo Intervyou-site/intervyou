@@ -37,7 +37,7 @@ class AdvancedFeedbackEngine:
         context: Dict = None
     ) -> Dict:
         """
-        Comprehensive answer evaluation
+        Comprehensive answer evaluation with company-specific and difficulty-aware feedback
         
         Returns:
             Dict with detailed feedback including:
@@ -47,9 +47,14 @@ class AdvancedFeedbackEngine:
             - Weaknesses (areas to improve)
             - Specific suggestions (actionable items)
             - Ideal answer comparison
+            - Company-specific tips
+            - Difficulty-appropriate expectations
             - Next steps
         """
         try:
+            # Extract company from context if available
+            company = context.get("company", "") if context else ""
+            
             # Multi-dimensional analysis
             dimensions = await self._analyze_dimensions(question, answer, category, difficulty)
             
@@ -65,13 +70,13 @@ class AdvancedFeedbackEngine:
             # Completeness check
             completeness = self._analyze_completeness(question, answer)
             
-            # Generate AI-powered insights (if API available)
-            ai_insights = await self._get_ai_insights(question, answer, category, difficulty)
+            # Generate AI-powered insights (if API available) with enhanced context
+            ai_insights = await self._get_ai_insights(question, answer, category, difficulty, company)
             
-            # Calculate overall score
-            overall_score = self._calculate_overall_score(dimensions, communication, technical, structure, completeness)
+            # Calculate overall score with difficulty adjustment
+            overall_score = self._calculate_overall_score(dimensions, communication, technical, structure, completeness, difficulty)
             
-            # Generate actionable feedback
+            # Generate actionable feedback with company-specific and difficulty-aware advice
             feedback = self._generate_feedback(
                 overall_score=overall_score,
                 dimensions=dimensions,
@@ -80,7 +85,10 @@ class AdvancedFeedbackEngine:
                 structure=structure,
                 completeness=completeness,
                 ai_insights=ai_insights,
-                category=category
+                category=category,
+                difficulty=difficulty,
+                company=company,
+                question=question
             )
             
             return feedback
@@ -481,6 +489,119 @@ class AdvancedFeedbackEngine:
         answer_lower = answer.lower()
         return sum(1 for term in technical_terms if term in answer_lower)
     
+    def _get_company_specific_tips(self, company: str, category: str) -> str:
+        """Get company-specific interview tips"""
+        company_tips = {
+            "Google": {
+                "general": "Google values scalability, efficiency, and innovative thinking. Mention how your solution scales to billions of users.",
+                "Python": "Discuss Python's role in Google's infrastructure. Mention tools like Bazel, gRPC, or Protocol Buffers if relevant.",
+                "System Design": "Focus on distributed systems, CAP theorem, and Google's technologies (BigTable, Spanner, MapReduce concepts).",
+                "Machine Learning": "Reference TensorFlow, Google's ML infrastructure, and production ML systems at scale."
+            },
+            "Amazon": {
+                "general": "Amazon emphasizes Leadership Principles. Show customer obsession, ownership, and bias for action in your answers.",
+                "Python": "Mention AWS services, boto3, Lambda, or how Python integrates with AWS ecosystem.",
+                "System Design": "Discuss AWS services, microservices, and how to build highly available, fault-tolerant systems.",
+                "Behavioral": "Use STAR method and tie answers to Amazon's 16 Leadership Principles."
+            },
+            "Microsoft": {
+                "general": "Microsoft values growth mindset, collaboration, and customer focus. Show how you learn and adapt.",
+                "Python": "Discuss Azure integration, .NET interoperability, or Microsoft's Python tools.",
+                "System Design": "Reference Azure services, hybrid cloud solutions, and enterprise-scale architectures."
+            },
+            "TCS": {
+                "general": "TCS values practical solutions for enterprise clients. Focus on reliability, maintainability, and business value.",
+                "Python": "Mention enterprise applications, automation, and integration with TCS platforms like BaNCS or Ignio.",
+                "System Design": "Discuss scalable enterprise solutions, banking systems, and client-specific requirements."
+            },
+            "Infosys": {
+                "general": "Infosys emphasizes innovation and digital transformation. Show how technology solves business problems.",
+                "Python": "Reference enterprise automation, Infosys platforms like Nia or Finacle integration.",
+                "System Design": "Focus on enterprise architecture, cloud solutions, and digital transformation strategies."
+            },
+            "Wipro": {
+                "general": "Wipro values innovation and client-centric solutions. Emphasize practical problem-solving.",
+                "Python": "Discuss HOLMES AI platform, automation, and enterprise Python applications.",
+                "System Design": "Reference cloud solutions, AI/ML integration, and scalable enterprise systems."
+            },
+            "Cognizant": {
+                "general": "Cognizant focuses on digital solutions and client success. Show business impact of technical decisions.",
+                "Python": "Mention intelligent automation, healthcare/banking solutions, and enterprise applications.",
+                "System Design": "Discuss industry-specific solutions, cloud architecture, and digital transformation."
+            },
+            "Accenture": {
+                "general": "Accenture values innovation and strategic thinking. Connect technical solutions to business outcomes.",
+                "Python": "Reference myWizard platform, automation, and consulting-focused solutions.",
+                "System Design": "Focus on enterprise transformation, cloud strategy, and scalable consulting solutions."
+            },
+            "Capgemini": {
+                "general": "Capgemini emphasizes innovation and engineering excellence. Show technical depth and business acumen.",
+                "Python": "Discuss intelligent automation, engineering solutions, and enterprise platforms.",
+                "System Design": "Reference cloud infrastructure, digital transformation, and engineering best practices."
+            }
+        }
+        
+        company_data = company_tips.get(company, {})
+        specific_tip = company_data.get(category, company_data.get("general", ""))
+        return specific_tip if specific_tip else f"For {company} interviews, demonstrate both technical expertise and business understanding."
+    
+    def _get_difficulty_expectations(self, difficulty: str, category: str) -> str:
+        """Get difficulty-specific expectations"""
+        expectations = {
+            "beginner": f"""
+- Clear explanation of fundamental concepts
+- At least one simple example
+- Basic understanding of {category} principles
+- 50-100 words with organized thoughts
+- No need for advanced optimizations or edge cases
+            """,
+            "intermediate": f"""
+- Solid understanding with detailed explanations
+- Multiple examples or use cases
+- Discussion of trade-offs and alternatives
+- 100-200 words with clear structure
+- Mention of common pitfalls or best practices
+- Some consideration of performance/scalability
+            """,
+            "advanced": f"""
+- Deep technical knowledge with nuanced understanding
+- Real-world production examples
+- Comprehensive trade-off analysis
+- 150-300 words with excellent structure
+- Discussion of edge cases, optimizations, and scalability
+- Industry best practices and advanced concepts
+- Comparison of multiple approaches with justification
+            """
+        }
+        return expectations.get(difficulty, expectations["intermediate"])
+    
+    def _get_score_description(self, difficulty: str, score_range: str) -> str:
+        """Get score description based on difficulty level"""
+        descriptions = {
+            "beginner": {
+                "9-10": "Excellent grasp of fundamentals with clear examples",
+                "7-8": "Good understanding of basics, minor gaps acceptable",
+                "5-6": "Basic knowledge but needs more clarity or examples",
+                "3-4": "Significant gaps in fundamental understanding",
+                "1-2": "Minimal understanding of basic concepts"
+            },
+            "intermediate": {
+                "9-10": "Comprehensive answer with trade-offs and best practices",
+                "7-8": "Solid understanding with good examples, minor improvements needed",
+                "5-6": "Decent knowledge but missing key concepts or depth",
+                "3-4": "Surface-level understanding with significant gaps",
+                "1-2": "Insufficient knowledge for intermediate level"
+            },
+            "advanced": {
+                "9-10": "Expert-level answer with production insights and deep analysis",
+                "7-8": "Strong technical depth with good trade-off discussion",
+                "5-6": "Good knowledge but lacks advanced concepts or depth",
+                "3-4": "Intermediate-level answer, not meeting advanced expectations",
+                "1-2": "Insufficient depth for advanced level"
+            }
+        }
+        return descriptions.get(difficulty, descriptions["intermediate"]).get(score_range, "")
+    
     def _analyze_technical_depth(self, answer: str, category: str) -> Dict:
         """Analyze technical depth"""
         return {
@@ -542,54 +663,84 @@ class AdvancedFeedbackEngine:
         question: str,
         answer: str,
         category: str,
-        difficulty: str
+        difficulty: str,
+        company: str = ""
     ) -> Optional[Dict]:
-        """Get AI-powered insights using OpenAI with enhanced prompts"""
+        """Get AI-powered insights using OpenAI with enhanced prompts including company and difficulty context"""
         if not self.openai_api_key:
             return None
         
         try:
-            prompt = f"""You are an expert technical interviewer and career coach with 15+ years of experience at top tech companies (Google, Amazon, Microsoft). Analyze this interview answer with the rigor of a senior interviewer.
+            # Build company-specific context
+            company_context = ""
+            if company:
+                company_tips = self._get_company_specific_tips(company, category)
+                company_context = f"\n**Company Context:** This is for a {company} interview. {company_tips}"
+            
+            # Build difficulty-specific expectations
+            difficulty_expectations = self._get_difficulty_expectations(difficulty, category)
+            
+            prompt = f"""You are an expert technical interviewer analyzing a real interview answer. Be SPECIFIC and reference the ACTUAL content of the answer.
 
 **Question:** {question}
 **Category:** {category}
 **Difficulty:** {difficulty}
 **Candidate's Answer:** {answer}
+{company_context}
 
-Provide detailed, actionable feedback in JSON format:
+**Difficulty Expectations ({difficulty}):**
+{difficulty_expectations}
+
+Analyze THIS SPECIFIC ANSWER (not a generic answer). Reference actual phrases, concepts, and details from the candidate's response.
+
+Provide feedback in JSON format:
 
 {{
   "strengths": [
-    "List 3-5 SPECIFIC things done well (be precise, not generic)",
-    "Focus on technical accuracy, communication clarity, problem-solving approach",
-    "Mention specific phrases or concepts the candidate used well"
+    "Quote or reference SPECIFIC parts of their answer that were good",
+    "Example: 'You correctly explained that [specific concept they mentioned]'",
+    "Example: 'Your example about [their actual example] was relevant'",
+    "Be precise - mention what THEY said, not what anyone could say"
   ],
   "weaknesses": [
-    "List 3-5 SPECIFIC areas to improve (be constructive but honest)",
-    "Point out missing concepts, unclear explanations, or gaps in logic",
-    "Identify what a senior engineer would expect that's missing"
+    "Point out SPECIFIC gaps in THIS answer",
+    "Example: 'You mentioned X but didn't explain how it relates to Y'",
+    "Example: 'Your answer focused on A but missed B which is crucial for this question'",
+    "Reference what's actually missing from THEIR response"
   ],
   "suggestions": [
-    "Provide 4-6 ACTIONABLE improvement suggestions",
-    "Be specific: 'Add X', 'Explain Y in more detail', 'Consider Z'",
-    "Include both immediate fixes and long-term learning recommendations"
+    "Give ACTIONABLE advice specific to improving THIS answer",
+    "Example: 'Add an explanation of [specific missing concept]'",
+    "Example: 'Expand on your point about [what they mentioned] by discussing [specific addition]'",
+    "Make it clear what to add/change in THIS specific answer"
   ],
-  "ideal_answer_outline": "Brief 3-4 sentence outline of what an excellent answer would cover",
+  "ideal_answer_outline": "What THIS answer should have covered (2-3 sentences) - be specific to the question",
   "missing_elements": [
-    "List 2-4 key concepts or points that should have been mentioned",
-    "Focus on what would make this answer go from good to excellent"
+    "List SPECIFIC concepts/points missing from THIS answer",
+    "Be concrete: 'Did not mention error handling', not 'Could be more complete'"
   ],
-  "score_justification": "2-3 sentences explaining why this answer deserves its score, referencing specific strengths and weaknesses"
+  "score_justification": "Explain the score based on what THIS answer contains and lacks, considering the {difficulty} difficulty level",
+  "company_specific_advice": "{f'Specific advice for {company} interviews' if company else 'General interview advice'}",
+  "ideal_answer_example": "Provide a brief example of how a strong candidate would answer this specific question (2-3 sentences)"
 }}
 
-**Evaluation Criteria:**
-- Technical Accuracy: Correct terminology, concepts, and explanations
-- Completeness: Addresses all parts of the question
-- Depth: Goes beyond surface-level, shows deep understanding
-- Communication: Clear, structured, easy to follow
-- Problem-Solving: Shows analytical thinking, considers trade-offs
+**CRITICAL RULES:**
+1. Reference the ACTUAL answer content - quote phrases they used
+2. Identify SPECIFIC gaps - what concepts/details are missing
+3. NO generic advice like "be more clear" - say WHAT to clarify
+4. NO generic praise like "good effort" - say WHAT was good
+5. Make it obvious you read THEIR answer, not a template
+6. Consider the {difficulty} level - adjust expectations accordingly
+{f'7. For {company}: Mention company-specific expectations and technologies' if company else ''}
 
-Be honest but encouraging. Focus on growth, not criticism."""
+**Scoring Guide for {difficulty} level:**
+- 9-10: {self._get_score_description(difficulty, '9-10')}
+- 7-8: {self._get_score_description(difficulty, '7-8')}
+- 5-6: {self._get_score_description(difficulty, '5-6')}
+- 3-4: {self._get_score_description(difficulty, '3-4')}
+- 1-2: {self._get_score_description(difficulty, '1-2')}
+
+Be honest and specific. This helps them improve."""
 
             headers = {
                 "Authorization": f"Bearer {self.openai_api_key}",
@@ -599,10 +750,10 @@ Be honest but encouraging. Focus on growth, not criticism."""
             payload = {
                 "model": "gpt-4o-mini",
                 "messages": [
-                    {"role": "system", "content": "You are a senior technical interviewer providing detailed, actionable feedback. Be specific, honest, and constructive. Focus on helping candidates improve."},
+                    {"role": "system", "content": f"You are a senior technical interviewer specializing in {category} interviews{f' at {company}' if company else ''}. Analyze the SPECIFIC answer provided. Reference actual content from the answer. Be precise, not generic. Quote their phrases. Identify specific gaps. Give actionable advice tailored to {difficulty} level."},
                     {"role": "user", "content": prompt}
                 ],
-                "max_tokens": 1000,
+                "max_tokens": 1500,
                 "temperature": 0.7,
                 "response_format": {"type": "json_object"}
             }
@@ -624,9 +775,10 @@ Be honest but encouraging. Focus on growth, not criticism."""
         communication: Dict,
         technical: Dict,
         structure: Dict,
-        completeness: Dict
+        completeness: Dict,
+        difficulty: str = "intermediate"
     ) -> float:
-        """Calculate weighted overall score"""
+        """Calculate weighted overall score with difficulty adjustment"""
         # Weighted average of dimensions
         weights = {
             "technical_accuracy": 0.25,
@@ -646,6 +798,16 @@ Be honest but encouraging. Focus on growth, not criticism."""
         if communication.get("filler_words", 0) > 5:
             score -= 0.5
         
+        # Difficulty-based adjustment (be more lenient for beginners, stricter for advanced)
+        if difficulty == "beginner":
+            # Boost beginner scores slightly if they show basic understanding
+            if score >= 5.0:
+                score += 0.5
+        elif difficulty == "advanced":
+            # Be stricter for advanced - require more depth
+            if dimensions["depth"] < 7.0:
+                score -= 0.5
+        
         return min(10.0, max(0.0, score))
     
     def _generate_feedback(
@@ -657,9 +819,12 @@ Be honest but encouraging. Focus on growth, not criticism."""
         structure: Dict,
         completeness: Dict,
         ai_insights: Optional[Dict],
-        category: str
+        category: str,
+        difficulty: str = "intermediate",
+        company: str = "",
+        question: str = ""
     ) -> Dict:
-        """Generate comprehensive feedback"""
+        """Generate comprehensive feedback with company-specific and difficulty-aware advice"""
         
         # Determine performance level
         if overall_score >= 8.5:
@@ -681,16 +846,27 @@ Be honest but encouraging. Focus on growth, not criticism."""
         # Generate weaknesses
         weaknesses = self._identify_weaknesses(dimensions, communication, technical, structure, ai_insights)
         
-        # Generate suggestions
-        suggestions = self._generate_suggestions(dimensions, communication, technical, structure, weaknesses, ai_insights)
+        # Generate suggestions with company and difficulty context
+        suggestions = self._generate_suggestions(dimensions, communication, technical, structure, weaknesses, ai_insights, difficulty, company, category)
         
         # Generate next steps
-        next_steps = self._generate_next_steps(overall_score, weaknesses, category)
+        next_steps = self._generate_next_steps(overall_score, weaknesses, category, difficulty)
         
-        return {
+        # Add company-specific tips if company is provided
+        company_tips = []
+        if company:
+            company_tips = self._generate_company_tips(company, category, dimensions, question)
+        
+        # Add ideal answer example if available from AI
+        ideal_answer = None
+        if ai_insights and "ideal_answer_example" in ai_insights:
+            ideal_answer = ai_insights["ideal_answer_example"]
+        
+        feedback = {
             "overall_score": round(overall_score, 1),
             "level": level,
             "level_emoji": level_emoji,
+            "difficulty": difficulty,
             "dimensions": {
                 "technical_accuracy": round(dimensions["technical_accuracy"], 1),
                 "communication": round(dimensions["communication_clarity"], 1),
@@ -709,6 +885,16 @@ Be honest but encouraging. Focus on growth, not criticism."""
             "ai_insights": ai_insights,
             "timestamp": datetime.utcnow().isoformat()
         }
+        
+        # Add optional fields if available
+        if company_tips:
+            feedback["company_specific_tips"] = company_tips
+        if ideal_answer:
+            feedback["ideal_answer_example"] = ideal_answer
+        if company:
+            feedback["company"] = company
+        
+        return feedback
     
     def _identify_strengths(
         self,
@@ -721,42 +907,53 @@ Be honest but encouraging. Focus on growth, not criticism."""
         """Identify specific strengths"""
         strengths = []
         
-        # Use AI insights if available
-        if ai_insights and "strengths" in ai_insights:
+        # Use AI insights if available (they should be specific)
+        if ai_insights and "strengths" in ai_insights and ai_insights["strengths"]:
             return ai_insights["strengths"][:5]
         
-        # Dimension-based strengths
+        # Dimension-based strengths (make them more specific)
         if dimensions["technical_accuracy"] >= 8.0:
-            strengths.append("Strong technical accuracy and correct use of terminology")
+            strengths.append("Demonstrated strong technical knowledge with accurate terminology")
+        elif dimensions["technical_accuracy"] >= 6.5:
+            strengths.append("Showed understanding of core technical concepts")
         
         if dimensions["communication_clarity"] >= 8.0:
-            strengths.append("Clear and well-structured communication")
+            strengths.append("Communicated ideas clearly with good structure and flow")
+        elif dimensions["communication_clarity"] >= 6.5:
+            strengths.append("Explained concepts in an understandable way")
         
         if dimensions["problem_solving"] >= 8.0:
-            strengths.append("Excellent problem-solving approach with consideration of alternatives")
+            strengths.append("Demonstrated strong analytical thinking and considered multiple approaches")
+        elif dimensions["problem_solving"] >= 6.5:
+            strengths.append("Showed problem-solving approach")
         
         if dimensions["depth"] >= 8.0:
-            strengths.append("Deep understanding demonstrated with detailed explanations")
+            strengths.append("Provided in-depth explanations showing deep understanding")
+        elif dimensions["depth"] >= 6.5:
+            strengths.append("Went beyond surface-level explanation")
         
-        # Communication-based strengths
+        # Communication-based strengths (more specific)
         if communication.get("has_examples"):
-            strengths.append("Good use of examples to illustrate points")
+            strengths.append("Supported explanation with concrete examples")
         
         if communication.get("has_structure"):
-            strengths.append("Well-organized answer with logical flow")
+            strengths.append("Organized answer with logical progression (first, then, finally)")
         
-        # Technical-based strengths
+        # Technical-based strengths (more specific)
         if technical.get("has_code_example"):
-            strengths.append("Provided concrete code examples")
+            strengths.append("Included code examples to demonstrate implementation")
         
         if technical.get("mentions_trade_offs"):
-            strengths.append("Considered trade-offs and different approaches")
+            strengths.append("Discussed trade-offs between different approaches")
+        
+        if technical.get("mentions_alternatives"):
+            strengths.append("Considered alternative solutions")
         
         # Structure-based strengths
-        if structure.get("is_organized"):
-            strengths.append("Structured answer with clear progression")
+        if structure.get("has_conclusion"):
+            strengths.append("Concluded answer with summary of key points")
         
-        return strengths[:5] if strengths else ["Attempted to answer the question"]
+        return strengths[:5] if strengths else ["Provided a response to the question"]
     
     def _identify_weaknesses(
         self,
@@ -769,43 +966,62 @@ Be honest but encouraging. Focus on growth, not criticism."""
         """Identify specific weaknesses"""
         weaknesses = []
         
-        # Use AI insights if available
-        if ai_insights and "weaknesses" in ai_insights:
+        # Use AI insights if available (they should be specific)
+        if ai_insights and "weaknesses" in ai_insights and ai_insights["weaknesses"]:
             return ai_insights["weaknesses"][:5]
         
-        # Dimension-based weaknesses
-        if dimensions["technical_accuracy"] < 6.0:
-            weaknesses.append("Technical accuracy could be improved - review key concepts")
+        # Dimension-based weaknesses (make them more actionable)
+        if dimensions["technical_accuracy"] < 5.0:
+            weaknesses.append("Technical explanation needs improvement - review core concepts and terminology")
+        elif dimensions["technical_accuracy"] < 6.5:
+            weaknesses.append("Some technical details are missing or could be more accurate")
         
-        if dimensions["communication_clarity"] < 6.0:
-            weaknesses.append("Communication clarity needs work - practice explaining concepts simply")
+        if dimensions["communication_clarity"] < 5.0:
+            weaknesses.append("Explanation is unclear - break down complex ideas into simpler parts")
+        elif dimensions["communication_clarity"] < 6.5:
+            weaknesses.append("Could communicate more clearly - use simpler language and better structure")
         
-        if dimensions["completeness"] < 6.0:
-            weaknesses.append("Answer incomplete - address all parts of the question")
+        if dimensions["completeness"] < 5.0:
+            weaknesses.append("Answer is incomplete - address all parts of the question")
+        elif dimensions["completeness"] < 6.5:
+            weaknesses.append("Missing some key points that should be covered")
         
-        if dimensions["depth"] < 6.0:
-            weaknesses.append("Lacks depth - provide more detailed explanations")
+        if dimensions["depth"] < 5.0:
+            weaknesses.append("Explanation is too surface-level - explain the 'why' and 'how', not just 'what'")
+        elif dimensions["depth"] < 6.5:
+            weaknesses.append("Could go deeper - add more details and reasoning")
         
-        # Communication-based weaknesses
-        if communication.get("word_count", 0) < 30:
-            weaknesses.append("Answer too brief - elaborate more on your points")
+        # Communication-based weaknesses (specific)
+        word_count = communication.get("word_count", 0)
+        if word_count < 20:
+            weaknesses.append("Answer is too brief (under 20 words) - aim for 80-150 words with details and examples")
+        elif word_count < 40:
+            weaknesses.append("Answer needs more elaboration - add examples and explain your reasoning")
         
-        if communication.get("filler_words", 0) > 5:
-            weaknesses.append("Reduce filler words (um, like, basically) for more professional delivery")
+        if communication.get("filler_words", 0) > 8:
+            weaknesses.append("Too many filler words (um, like, basically) - practice speaking more confidently")
+        elif communication.get("filler_words", 0) > 5:
+            weaknesses.append("Reduce filler words for more professional delivery")
         
-        if not communication.get("has_examples"):
-            weaknesses.append("Add concrete examples to support your explanations")
+        if not communication.get("has_examples") and word_count > 30:
+            weaknesses.append("Missing concrete examples - add at least one specific example to illustrate your point")
         
-        # Technical-based weaknesses
+        # Technical-based weaknesses (specific)
         if not technical.get("has_code_example") and dimensions["technical_accuracy"] < 7.0:
-            weaknesses.append("Include code examples to demonstrate understanding")
+            weaknesses.append("Add code examples to demonstrate your understanding")
         
-        if not technical.get("mentions_trade_offs"):
-            weaknesses.append("Discuss trade-offs and alternative approaches")
+        if not technical.get("mentions_trade_offs") and dimensions["problem_solving"] < 7.0:
+            weaknesses.append("Discuss pros/cons and when to use different approaches")
         
-        # Structure-based weaknesses
-        if not structure.get("is_organized"):
-            weaknesses.append("Improve organization - use structured approach (e.g., First, Then, Finally)")
+        if not technical.get("mentions_alternatives"):
+            weaknesses.append("Consider mentioning alternative solutions or approaches")
+        
+        # Structure-based weaknesses (specific)
+        if not structure.get("is_organized") and word_count > 40:
+            weaknesses.append("Improve organization - use clear structure like 'First...Then...Finally' or 'Problem-Solution-Benefit'")
+        
+        if not structure.get("has_conclusion") and word_count > 60:
+            weaknesses.append("Add a brief conclusion to summarize your key points")
         
         return weaknesses[:5] if weaknesses else []
     
@@ -816,63 +1032,150 @@ Be honest but encouraging. Focus on growth, not criticism."""
         technical: Dict,
         structure: Dict,
         weaknesses: List[str],
-        ai_insights: Optional[Dict]
+        ai_insights: Optional[Dict],
+        difficulty: str = "intermediate",
+        company: str = "",
+        category: str = ""
     ) -> List[str]:
-        """Generate actionable suggestions"""
+        """Generate actionable suggestions with difficulty and company context"""
         suggestions = []
         
-        # Use AI insights if available
-        if ai_insights and "suggestions" in ai_insights:
-            return ai_insights["suggestions"][:5]
+        # Use AI insights if available (they should be specific)
+        if ai_insights and "suggestions" in ai_insights and ai_insights["suggestions"]:
+            return ai_insights["suggestions"][:6]
         
-        # Based on weaknesses
-        if dimensions["technical_accuracy"] < 7.0:
-            suggestions.append("Review fundamental concepts and practice explaining them in your own words")
+        # Difficulty-specific suggestions
+        if difficulty == "beginner":
+            if dimensions["technical_accuracy"] < 6.0:
+                suggestions.append("Start with the basics - make sure you understand core concepts before moving to advanced topics")
+            if not communication.get("has_examples"):
+                suggestions.append("Add simple, relatable examples - like comparing a stack to a pile of plates")
+        elif difficulty == "advanced":
+            if dimensions["depth"] < 7.0:
+                suggestions.append("Go deeper - discuss implementation details, performance implications, and production considerations")
+            if not technical.get("mentions_trade_offs"):
+                suggestions.append("Analyze trade-offs comprehensively - discuss when to use each approach and why")
         
-        if dimensions["communication_clarity"] < 7.0:
-            suggestions.append("Practice the 'Explain Like I'm 5' technique - simplify complex ideas")
+        # Generate specific suggestions based on weaknesses
+        if dimensions["technical_accuracy"] < 6.0:
+            suggestions.append("Study the fundamental concepts for this topic - create flashcards for key terms")
+        elif dimensions["technical_accuracy"] < 7.5:
+            suggestions.append("Review technical details - ensure you can explain concepts without looking them up")
+        
+        if dimensions["communication_clarity"] < 6.0:
+            suggestions.append("Practice the 'Explain Like I'm 5' technique - simplify complex ideas into everyday language")
+        elif dimensions["communication_clarity"] < 7.5:
+            suggestions.append("Work on clarity - explain one concept at a time before moving to the next")
         
         if not communication.get("has_examples"):
-            suggestions.append("Always include at least one concrete example when explaining concepts")
+            suggestions.append("Always include at least one concrete, specific example when explaining concepts")
         
         if not structure.get("is_organized"):
-            suggestions.append("Use frameworks like 'Situation-Action-Result' or 'Problem-Solution-Benefit'")
+            suggestions.append("Use frameworks: STAR (Situation-Task-Action-Result) for behavioral, or Problem-Solution-Benefit for technical")
         
-        if dimensions["depth"] < 7.0:
-            suggestions.append("Go deeper - explain the 'why' behind concepts, not just the 'what'")
+        if dimensions["depth"] < 6.5:
+            suggestions.append("Go deeper - explain WHY things work this way, not just WHAT they are")
         
         if not technical.get("mentions_trade_offs"):
-            suggestions.append("Discuss pros/cons and when to use different approaches")
+            suggestions.append("Discuss trade-offs: 'Approach A is better for X because..., but Approach B works better for Y because...'")
         
-        # General suggestions
-        suggestions.append("Practice with a timer to improve pacing and completeness")
-        suggestions.append("Record yourself and review to identify areas for improvement")
+        if communication.get("word_count", 0) < 50:
+            target_words = "50-100" if difficulty == "beginner" else "100-200" if difficulty == "intermediate" else "150-300"
+            suggestions.append(f"Aim for {target_words} words - provide enough detail without rambling")
         
-        return suggestions[:6]
+        if dimensions["problem_solving"] < 7.0:
+            suggestions.append("Show your thinking process - explain how you'd approach solving this problem step-by-step")
+        
+        # Company-specific suggestions
+        if company:
+            company_suggestion = self._get_company_suggestion(company, category, dimensions)
+            if company_suggestion:
+                suggestions.append(company_suggestion)
+        
+        # General improvement suggestions
+        suggestions.append("Practice with a timer - aim to answer in 2-3 minutes with complete thoughts")
+        
+        if dimensions["overall_score"] < 7.0:
+            suggestions.append("Record yourself answering and review - identify filler words and unclear explanations")
+        
+        return suggestions[:7]
     
     def _generate_next_steps(
         self,
         overall_score: float,
         weaknesses: List[str],
-        category: str
+        category: str,
+        difficulty: str = "intermediate"
     ) -> List[str]:
-        """Generate personalized next steps"""
+        """Generate personalized next steps with difficulty awareness"""
         next_steps = []
         
         if overall_score < 6.0:
             next_steps.append(f"📚 Review {category} fundamentals - focus on core concepts")
-            next_steps.append("🎯 Practice 5 similar questions this week")
-            next_steps.append("📝 Write out answers before speaking to organize thoughts")
+            if difficulty == "beginner":
+                next_steps.append("🎯 Practice 3-5 similar beginner questions this week")
+                next_steps.append("📝 Write out answers before speaking to organize thoughts")
+            else:
+                next_steps.append("🎯 Practice 5-7 similar questions this week")
+                next_steps.append("📝 Study example answers from top performers")
         elif overall_score < 8.0:
             next_steps.append("🔄 Practice this question again with improvements")
             next_steps.append("📊 Focus on weak areas identified above")
             next_steps.append("🎤 Record and review your answers")
+            if difficulty == "advanced":
+                next_steps.append("💡 Research production use cases and real-world examples")
         else:
-            next_steps.append("🌟 Great job! Try more advanced questions")
+            if difficulty == "beginner":
+                next_steps.append("🌟 Great job! Try intermediate-level questions")
+            elif difficulty == "intermediate":
+                next_steps.append("🌟 Excellent! Move to advanced questions")
+            else:
+                next_steps.append("🌟 Outstanding! Help others or tackle system design challenges")
             next_steps.append("🎯 Practice explaining to others to solidify understanding")
-            next_steps.append("📈 Move to next difficulty level")
+            next_steps.append("📈 Challenge yourself with harder variations")
         
         return next_steps
+    
+    def _get_company_suggestion(self, company: str, category: str, dimensions: Dict) -> str:
+        """Get company-specific suggestion"""
+        suggestions = {
+            "Google": "For Google interviews, emphasize scalability - explain how your solution handles billions of users",
+            "Amazon": "For Amazon interviews, tie your answer to Leadership Principles like 'Customer Obsession' or 'Ownership'",
+            "Microsoft": "For Microsoft interviews, show growth mindset - mention how you'd learn and adapt",
+            "TCS": "For TCS interviews, focus on practical enterprise solutions and business value",
+            "Infosys": "For Infosys interviews, connect technical solutions to digital transformation outcomes",
+            "Wipro": "For Wipro interviews, emphasize innovation and client-centric problem-solving",
+            "Cognizant": "For Cognizant interviews, discuss business impact and industry-specific applications",
+            "Accenture": "For Accenture interviews, link technical decisions to strategic business outcomes",
+            "Capgemini": "For Capgemini interviews, demonstrate both technical depth and engineering excellence"
+        }
+        return suggestions.get(company, "")
+    
+    def _generate_company_tips(self, company: str, category: str, dimensions: Dict, question: str) -> List[str]:
+        """Generate company-specific tips"""
+        tips = []
+        
+        # Add company-specific context
+        company_tip = self._get_company_specific_tips(company, category)
+        if company_tip:
+            tips.append(f"💼 {company} Focus: {company_tip}")
+        
+        # Add category-specific company tips
+        if "System Design" in category or "system" in question.lower():
+            if company in ["Google", "Amazon", "Microsoft"]:
+                tips.append(f"🏗️ For {company}: Discuss their cloud platform and services in your answer")
+            elif company in ["TCS", "Infosys", "Wipro", "Cognizant", "Accenture", "Capgemini"]:
+                tips.append(f"🏗️ For {company}: Focus on enterprise-scale solutions and client requirements")
+        
+        if "Behavioral" in category:
+            if company == "Amazon":
+                tips.append("📋 Amazon Tip: Structure answers using STAR and reference specific Leadership Principles")
+            elif company == "Google":
+                tips.append("📋 Google Tip: Show 'Googleyness' - collaboration, innovation, and user focus")
+            elif company in ["TCS", "Infosys", "Wipro"]:
+                tips.append(f"📋 {company} Tip: Emphasize teamwork, adaptability, and client satisfaction")
+        
+        return tips[:3]
     
     def _fallback_evaluation(self, question: str, answer: str) -> Dict:
         """Enhanced fallback evaluation with better scoring"""

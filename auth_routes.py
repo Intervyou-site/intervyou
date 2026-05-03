@@ -1,18 +1,45 @@
 # auth_routes.py
 """
-OAuth Social Login Routes and Forgot Password Implementation
+OAuth Social Login Routes and Secure Password Reset Implementation
+Enhanced with rate limiting, secure token generation, and proper security measures
 """
 
 from fastapi import APIRouter, Request, Depends, Form, BackgroundTasks, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-import random
 import os
+import logging
 
 # Import from main app
 from oauth_config import oauth
-from email_service import send_otp_email
+
+# Import security services
+from rate_limiter import rate_limiter
+
+logger = logging.getLogger(__name__)
+
+# Simple session helper (since SessionSecurity doesn't exist)
+def create_secure_session(request, user_id: int, remember_me: bool = False):
+    """Create a secure session for the user"""
+    request.session["user_id"] = user_id
+    request.session["logged_in"] = True
+    request.session["login_time"] = datetime.utcnow().isoformat()
+    if remember_me:
+        request.session["remember_me"] = True
+
+# Import password reset service (if available)
+try:
+    from password_reset_service import (
+        password_reset_storage, 
+        send_password_reset_email
+    )
+    PASSWORD_RESET_AVAILABLE = True
+except ImportError as e:
+    PASSWORD_RESET_AVAILABLE = False
+    logger.warning(f"⚠️  Password reset service not available: {e}")
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -49,7 +76,7 @@ async def google_login(request: Request):
 
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
-    """Handle Google OAuth callback"""
+    """Handle Google OAuth callback with enhanced security"""
     from fastapi_app_cleaned import User, get_password_hash
     
     try:
@@ -63,59 +90,69 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         email = user_info.get('email')
         name = user_info.get('name') or email.split('@')[0]
         
+        # Validate email
+        if not email:
+            add_flash(request, "No email provided by Google", "danger")
+            return RedirectResponse("/login", status_code=303)
+        
         # Check if user exists
         user = db.query(User).filter_by(email=email).first()
         
         if not user:
             # Create new user with OAuth
-            # Use a shorter random password (bcrypt has 72 byte limit)
-            random_password = os.urandom(16).hex()[:50]  # Max 50 chars to be safe
+            # Generate secure random password for OAuth users
+            import secrets
+            random_password = secrets.token_urlsafe(32)
+            
             user = User(
                 name=name,
                 email=email,
-                password=get_password_hash(random_password)
+                password=get_password_hash(random_password),
+                email_verified=True  # OAuth emails are pre-verified
             )
             db.add(user)
             db.commit()
             db.refresh(user)
             add_flash(request, f"Welcome {name}! Account created via Google.", "success")
+            logger.info(f"✅ New user created via Google OAuth: {email}")
         else:
+            # Mark email as verified if not already
+            if not user.email_verified:
+                user.email_verified = True
+                db.commit()
             add_flash(request, f"Welcome back {name}!", "success")
+            logger.info(f"✅ User logged in via Google OAuth: {email}")
         
-        # Log user in
-        request.session["user_id"] = user.id
+        # Create secure session
+        create_secure_session(request, user.id, remember_me=False)
         request.session["oauth_provider"] = "google"
         
         return RedirectResponse("/", status_code=303)
         
     except Exception as e:
-        print(f"Google OAuth error: {e}")
+        logger.error(f"❌ Google OAuth error: {e}")
         add_flash(request, "Google login failed. Please try again.", "danger")
         return RedirectResponse("/login", status_code=303)
 
 
-# ==================== FORGOT PASSWORD (OTP-based) ====================
-
-# In-memory OTP storage (for development - use Redis in production)
-otp_storage = {}
-
-def generate_otp(length=6):
-    """Generate numeric OTP"""
-    return ''.join([str(random.randint(0, 9)) for _ in range(length)])
-
+# ==================== SECURE PASSWORD RESET (OTP-based) ====================
 
 @router.get("/forgot_password")
 async def forgot_password_page(request: Request):
     """Display forgot password form"""
+    if not PASSWORD_RESET_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Password reset service not available")
     from fastapi_app_cleaned import templates
-    return templates.TemplateResponse("forgot_password.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="forgot_password.html")
 
 
 @router.get("/forgot_password/verify")
 async def forgot_password_verify_page(request: Request):
     """Display OTP verification form"""
+    if not PASSWORD_RESET_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Password reset service not available")
     from fastapi_app_cleaned import templates
-    return templates.TemplateResponse("forgot_password_verify.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="forgot_password_verify.html")
 
 
 @router.post("/forgot_password/request_otp")
@@ -125,34 +162,63 @@ async def request_password_reset_otp(
     background: BackgroundTasks = None,
     db: Session = Depends(get_db)
 ):
-    """Request OTP for password reset"""
+    """
+    Request OTP for password reset with rate limiting and security measures.
+    """
+    if not PASSWORD_RESET_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Password reset service not available")
     from fastapi_app_cleaned import User
     
     email = email.strip().lower()
     
+    # Rate limiting - 100 requests per 5 minutes per IP (essentially unlimited for dev)
+    is_limited, retry_after = rate_limiter.check_rate_limit(
+        request, 
+        max_requests=100, 
+        window_seconds=300,
+        endpoint="password_reset"
+    )
+    
+    if is_limited:
+        add_flash(
+            request, 
+            f"Too many password reset requests. Please try again in {retry_after // 60} minutes.", 
+            "danger"
+        )
+        return RedirectResponse("/forgot_password", status_code=303)
+    
+    # Check cooldown (60 seconds between requests for same email)
+    is_in_cooldown, remaining = password_reset_storage.check_cooldown(email, cooldown_seconds=60)
+    if is_in_cooldown:
+        add_flash(
+            request,
+            f"Please wait {remaining} seconds before requesting another code.",
+            "warning"
+        )
+        return RedirectResponse("/forgot_password", status_code=303)
+    
     # Check if user exists (but don't reveal this for security)
     user = db.query(User).filter_by(email=email).first()
     
-    # Generate OTP
-    otp = generate_otp(6)
-    expiry = datetime.utcnow() + timedelta(minutes=10)
+    # Generate OTP (8 digits for better security)
+    otp = password_reset_storage.create_otp(email, expiry_minutes=10)
     
-    # Store OTP (in production, use Redis with TTL)
-    otp_storage[email] = {
-        'otp': otp,
-        'expiry': expiry,
-        'attempts': 0
-    }
+    # Set cooldown
+    password_reset_storage.set_cooldown(email, cooldown_seconds=60)
     
     # Send email (only if user exists, but don't reveal this)
     if user:
         if background:
-            background.add_task(send_otp_email, email, otp, 10)
+            background.add_task(send_password_reset_email, email, otp, 10)
         else:
-            send_otp_email(email, otp, 10)
+            send_password_reset_email(email, otp, 10)
+        
+        logger.info(f"🔐 Password reset OTP sent to {email}")
+    else:
+        logger.info(f"🔐 Password reset requested for non-existent email: {email}")
     
-    # Always return success (security best practice)
-    add_flash(request, "If an account exists, an OTP has been sent to your email.", "info")
+    # Always return success (security best practice - don't reveal if email exists)
+    add_flash(request, "If an account exists, a verification code has been sent to your email.", "info")
     return RedirectResponse("/forgot_password/verify", status_code=303)
 
 
@@ -162,53 +228,69 @@ async def verify_otp_and_reset(
     email: str = Form(...),
     otp: str = Form(...),
     new_password: str = Form(...),
+    confirm_password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    """Verify OTP and reset password"""
-    from fastapi_app_cleaned import User, get_password_hash
+    """
+    Verify OTP and reset password with enhanced security validation.
+    """
+    if not PASSWORD_RESET_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Password reset service not available")
+    from fastapi_app_cleaned import User, get_password_hash, PasswordValidator
     
     email = email.strip().lower()
     otp = otp.strip()
     
-    # Check OTP
-    stored = otp_storage.get(email)
+    # Rate limiting for verification attempts
+    is_limited, retry_after = rate_limiter.check_rate_limit(
+        request,
+        max_requests=10,
+        window_seconds=300,
+        endpoint="otp_verification"
+    )
     
-    if not stored:
-        add_flash(request, "No OTP request found. Please request a new one.", "danger")
-        return RedirectResponse("/forgot_password", status_code=303)
-    
-    # Check expiry
-    if datetime.utcnow() > stored['expiry']:
-        del otp_storage[email]
-        add_flash(request, "OTP expired. Please request a new one.", "danger")
-        return RedirectResponse("/forgot_password", status_code=303)
-    
-    # Check attempts
-    if stored['attempts'] >= 3:
-        del otp_storage[email]
-        add_flash(request, "Too many attempts. Please request a new OTP.", "danger")
+    if is_limited:
+        add_flash(
+            request,
+            f"Too many verification attempts. Please try again in {retry_after // 60} minutes.",
+            "danger"
+        )
         return RedirectResponse("/forgot_password", status_code=303)
     
     # Verify OTP
-    if stored['otp'] != otp:
-        stored['attempts'] += 1
-        add_flash(request, f"Invalid OTP. {3 - stored['attempts']} attempts remaining.", "danger")
+    is_valid, error_msg = password_reset_storage.verify_otp(email, otp, max_attempts=3)
+    
+    if not is_valid:
+        add_flash(request, error_msg, "danger")
+        return RedirectResponse("/forgot_password/verify", status_code=303)
+    
+    # Validate password confirmation
+    if new_password != confirm_password:
+        add_flash(request, "Passwords do not match", "danger")
+        return RedirectResponse("/forgot_password/verify", status_code=303)
+    
+    # Validate password strength
+    is_strong, strength_error = PasswordValidator.validate_password_strength(new_password)
+    if not is_strong:
+        add_flash(request, strength_error, "danger")
         return RedirectResponse("/forgot_password/verify", status_code=303)
     
     # OTP is valid - reset password
     user = db.query(User).filter_by(email=email).first()
     
     if not user:
+        # This shouldn't happen if OTP was valid, but handle gracefully
         add_flash(request, "Account not found.", "danger")
         return RedirectResponse("/login", status_code=303)
     
     # Update password
     user.password = get_password_hash(new_password)
+    user.password_changed_at = datetime.utcnow()  # Track password changes
     db.add(user)
     db.commit()
     
-    # Clear OTP
-    del otp_storage[email]
+    logger.info(f"✅ Password reset successful for {email}")
     
     add_flash(request, "Password reset successful! Please login with your new password.", "success")
     return RedirectResponse("/login", status_code=303)
+

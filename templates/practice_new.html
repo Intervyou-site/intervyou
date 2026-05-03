@@ -3,6 +3,10 @@
 {% block title %}Practice - IntervYou{% endblock %}
 
 {% block extra_head %}
+<!-- Cache-busting headers to force fresh content -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
   .category-grid {
     display: grid;
@@ -62,11 +66,177 @@
     background-color: var(--error-light);
     color: var(--error);
   }
+  
+  /* Mode Toggle */
+  .mode-toggle {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .mode-toggle button {
+    flex: 1;
+    min-width: 150px;
+  }
+  
+  /* MCQ Options */
+  .mcq-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin: var(--spacing-lg) 0;
+  }
+  
+  .mcq-option {
+    padding: var(--spacing-lg);
+    border: 2px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+  }
+  
+  .mcq-option:hover {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-light);
+  }
+  
+  .mcq-option.selected {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-light);
+  }
+  
+  .mcq-option.correct {
+    border-color: var(--success);
+    background-color: var(--success-light);
+  }
+  
+  .mcq-option.incorrect {
+    border-color: var(--error);
+    background-color: var(--error-light);
+  }
+  
+  /* Streak Widget */
+  .streak-widget {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 250px;
+    z-index: 1;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-normal);
+    pointer-events: auto;
+  }
+  
+  .streak-widget [x-collapse] {
+    transition: height 0.3s ease-out, opacity 0.3s ease-out;
+  }
+  
+  .calendar-day {
+    font-weight: 600;
+    font-size: 10px;
+  }
+  
+  .calendar-day.practiced {
+    background-color: var(--success);
+    color: white;
+  }
+  
+  .calendar-day.missed {
+    background-color: var(--bg-secondary);
+    color: var(--text-tertiary);
+  }
+  
+  /* Recommendations */
+  .recommendation-card {
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .recommendation-card:hover {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  /* Difficulty Filter */
+  .difficulty-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  @media (max-width: 768px) {
+    .streak-widget {
+      position: static;
+      width: 100%;
+      margin-bottom: var(--spacing-lg);
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div x-data="practicePage()" x-init="initPractice()">
+  <!-- Streak Widget (Only visible on Categories page) -->
+  <div class="streak-widget" x-show="!started && streakInfo.current_streak !== undefined" x-data="{streakMinimized: true}">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+      <h3 style="font-size: 16px; font-weight: 600; margin: 0;">Practice Streak</h3>
+      <button @click="streakMinimized = !streakMinimized" 
+              class="btn btn-ghost btn-sm" 
+              style="padding: 4px 8px; min-width: auto;"
+              :title="streakMinimized ? 'Expand' : 'Minimize'">
+        <svg x-show="!streakMinimized" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+        <svg x-show="streakMinimized" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Minimized View (Default) -->
+    <div x-show="streakMinimized" style="text-align: center;">
+      <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);" 
+           x-text="streakInfo.current_streak || 0"></div>
+      <div style="font-size: 11px; color: var(--text-tertiary);">days</div>
+    </div>
+    
+    <!-- Expanded View -->
+    <div x-show="!streakMinimized" x-collapse>
+      <div style="font-size: 32px; font-weight: 700; color: var(--accent-primary); text-align: center; margin: var(--spacing-lg) 0;" 
+           x-text="streakInfo.current_streak || 0"></div>
+      <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+        Day Streak
+      </div>
+      
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+        <template x-for="day in streakInfo.calendar_days" :key="day.date">
+          <div :class="day.practiced ? 'calendar-day practiced' : 'calendar-day missed'"
+               :title="day.day_name"
+               style="aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+            <span x-text="day.day_name.substring(0, 1)"></span>
+          </div>
+        </template>
+      </div>
+      
+      <div style="margin-top: var(--spacing-md); font-size: 12px; color: var(--text-tertiary); text-align: center;">
+        Longest: <span x-text="streakInfo.longest_streak || 0"></span> days
+      </div>
+    </div>
+  </div>
+
   <!-- Category Selection View -->
   <div x-show="!started" x-cloak>
     <div class="page-header">
@@ -88,9 +258,38 @@
       </div>
     </div>
     
+    <!-- Recommendations Widget -->
+    <div class="card" style="margin-bottom: var(--spacing-2xl);">
+      <h3 style="font-size: 16px; font-weight: 600; margin-bottom: var(--spacing-sm);">Recommended Practice</h3>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
+        <span x-show="recommendations.length > 0">Based on your past attempts</span>
+        <span x-show="recommendations.length === 0">Quick challenges to boost your skills</span>
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+        <!-- Rapid Fire - Always Show -->
+        <div @click="choose('Rapid Fire')" class="recommendation-card" style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%); border-left: 3px solid #ffc107;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
+            <span style="font-size: 20px;">⚡</span>
+            <span style="font-weight: 600; color: var(--text-primary);">Rapid Fire Challenge</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary);">Test your speed with 5 quick MCQ questions - 30 seconds each!</div>
+        </div>
+        
+        <!-- Dynamic Recommendations -->
+        <template x-for="rec in recommendations" :key="rec.category">
+          <div @click="startRecommendedPractice(rec)" class="recommendation-card">
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-xs);" 
+                 x-text="rec.category + (rec.subcategory ? ' - ' + rec.subcategory : '')"></div>
+            <div style="font-size: 12px; color: var(--text-secondary);" x-text="rec.reason"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+    
     <!-- Category Grid -->
     <div class="category-grid">
-      <template x-for="cat in categoriesList" :key="cat">
+      <template x-for="cat in categoriesList.filter(c => c !== 'Rapid Fire')" :key="cat">
         <div @click="choose(cat)" 
              class="category-card"
              :class="selectedCandidate === cat ? 'active' : ''"
@@ -100,6 +299,7 @@
         </div>
       </template>
     </div>
+    
   </div>
   
   <!-- Practice View -->
@@ -110,7 +310,8 @@
           <h1 class="page-title" style="margin: 0;" x-text="selectedCategory"></h1>
           <span x-show="selectedCompany" class="badge badge-primary" x-text="selectedCompany"></span>
         </div>
-        <p class="page-subtitle">Answer the question below and receive AI-powered feedback</p>
+        <p class="page-subtitle" x-show="practiceMode !== 'rapidfire'">Answer the question below and receive AI-powered feedback</p>
+        <p class="page-subtitle" x-show="practiceMode === 'rapidfire'">Answer 5 questions as fast as you can!</p>
       </div>
       <button @click="resetToCategories()" class="btn btn-ghost">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,8 +321,37 @@
       </button>
     </div>
     
-    <!-- Progress Bar -->
-    <div style="margin-bottom: var(--spacing-2xl);">
+    <!-- Mode Toggle (Hide for Rapid Fire) -->
+    <div x-show="practiceMode !== 'rapidfire'" class="mode-toggle">
+      <button @click="practiceMode = 'interview'" 
+              :class="practiceMode === 'interview' ? 'btn btn-primary' : 'btn btn-secondary'">
+        Interview Mode
+      </button>
+      <button @click="switchToMCQMode()"
+              :class="practiceMode === 'mcq' ? 'btn btn-primary' : 'btn btn-secondary'">
+        MCQ Mode
+      </button>
+    </div>
+    
+    <!-- Difficulty Filter (Hide for Rapid Fire) -->
+    <div x-show="practiceMode !== 'rapidfire'" class="difficulty-filter">
+      <span style="font-size: 14px; color: var(--text-secondary); margin-right: var(--spacing-md);">Difficulty:</span>
+      <button @click="changeDifficulty('beginner')" 
+              :class="difficulty === 'beginner' ? 'difficulty-badge difficulty-beginner' : 'btn btn-ghost btn-sm'">
+        Beginner
+      </button>
+      <button @click="changeDifficulty('intermediate')"
+              :class="difficulty === 'intermediate' ? 'difficulty-badge difficulty-intermediate' : 'btn btn-ghost btn-sm'">
+        Intermediate
+      </button>
+      <button @click="changeDifficulty('advanced')"
+              :class="difficulty === 'advanced' ? 'difficulty-badge difficulty-advanced' : 'btn btn-ghost btn-sm'">
+        Advanced
+      </button>
+    </div>
+    
+    <!-- Progress Bar (Hide for Rapid Fire) -->
+    <div x-show="practiceMode !== 'rapidfire'" style="margin-bottom: var(--spacing-2xl);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
         <span style="font-size: 13px; color: var(--text-secondary);">Progress</span>
         <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);" x-text="progress + '%'"></span>
@@ -131,8 +361,8 @@
       </div>
     </div>
     
-    <!-- Question Card -->
-    <div class="question-card" style="margin-bottom: var(--spacing-2xl);">
+    <!-- Question Card (Hide for Rapid Fire) -->
+    <div x-show="practiceMode !== 'rapidfire'" class="question-card" style="margin-bottom: var(--spacing-2xl);">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-lg);">
         <div style="flex: 1;">
           <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
@@ -174,8 +404,8 @@
       </div>
     </div>
     
-    <!-- Answer Section -->
-    <div class="card" style="margin-bottom: var(--spacing-2xl);">
+    <!-- Answer Section (Interview Mode) -->
+    <div x-show="practiceMode === 'interview'" class="card" style="margin-bottom: var(--spacing-2xl);">
       <div class="card-header">
         <h3 class="card-title">Type Your Answer</h3>
         <p class="card-subtitle">Press Enter to submit, Shift+Enter for new line</p>
@@ -213,6 +443,166 @@
         <button @click="nextQuestion()" class="btn btn-secondary">Next Question</button>
       </div>
     </div>
+    
+    <!-- MCQ Mode Interface -->
+    <div x-show="practiceMode === 'mcq' && mcqOptions.length > 0" class="card" style="margin-bottom: var(--spacing-2xl);">
+      <div class="card-header">
+        <h3 class="card-title">Select Your Answer</h3>
+        <p class="card-subtitle">Choose the correct option</p>
+      </div>
+      
+      <div class="mcq-options">
+        <template x-for="(option, index) in mcqOptions" :key="index">
+          <div @click="selectedOption = option" 
+               class="mcq-option"
+               :class="{
+                 'selected': selectedOption === option,
+                 'correct': showExplanation && option === correctAnswer,
+                 'incorrect': showExplanation && selectedOption === option && option !== correctAnswer
+               }">
+            <span style="font-weight: 600; margin-right: var(--spacing-sm);" x-text="String.fromCharCode(65 + index) + '.'"></span>
+            <span x-text="option"></span>
+          </div>
+        </template>
+      </div>
+      
+      <div x-show="showExplanation" class="card" style="background-color: var(--bg-secondary); padding: var(--spacing-lg); margin-top: var(--spacing-lg);">
+        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-sm);">
+          <span x-show="selectedOption === correctAnswer" style="color: var(--success);">✅ Correct!</span>
+          <span x-show="selectedOption !== correctAnswer" style="color: var(--error);">❌ Incorrect</span>
+        </h4>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">
+          <strong>Correct Answer:</strong> <span x-text="correctAnswer"></span>
+        </p>
+        <p style="font-size: 14px; color: var(--text-secondary);" x-text="explanation"></p>
+      </div>
+      
+      <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
+        <button @click="submitMCQ()" x-show="!showExplanation" class="btn btn-primary">Submit Answer</button>
+        <button @click="nextMCQQuestion()" x-show="showExplanation" class="btn btn-primary">Next Question</button>
+      </div>
+    </div>
+    
+    <!-- Rapid Fire Mode -->
+    <div x-show="practiceMode === 'rapidfire' && rapidFireActive" class="card" style="margin-bottom: var(--spacing-2xl);">
+      <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 class="card-title">Rapid Fire Round</h3>
+            <p class="card-subtitle">Answer as fast as you can!</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);" 
+                 :class="rapidFireTimer <= 10 ? 'animate-pulse' : ''"
+                 x-text="rapidFireTimer + 's'"></div>
+            <div style="font-size: 12px; color: var(--text-secondary);" 
+                 x-text="'Question ' + (rapidFireIndex + 1) + '/5'"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Rapid Fire Question Text -->
+      <div style="padding: var(--spacing-xl); background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg);">
+        <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0;" x-text="question"></h3>
+      </div>
+      
+      <div class="mcq-options">
+        <template x-for="(option, index) in rapidFireOptions" :key="index">
+          <div @click="rapidFireAnswer(option)" class="mcq-option">
+            <span style="font-weight: 600; margin-right: var(--spacing-sm);" x-text="String.fromCharCode(65 + index) + '.'"></span>
+            <span x-text="option"></span>
+          </div>
+        </template>
+      </div>
+      
+      <div style="margin-top: var(--spacing-lg); text-align: center;">
+        <div style="font-size: 14px; color: var(--text-secondary);">
+          Score: <span style="font-weight: 600; color: var(--accent-primary);" x-text="rapidFireScore"></span>/5
+        </div>
+      </div>
+    </div>
+    
+    <!-- Rapid Fire Results -->
+    <div x-show="practiceMode === 'rapidfire' && rapidFireResults" class="card" style="margin-bottom: var(--spacing-2xl); text-align: center; padding: var(--spacing-2xl);">
+      <div style="font-size: 64px; margin-bottom: var(--spacing-lg);">
+        <span x-show="rapidFireResults && rapidFireResults.accuracy >= 80">🎉</span>
+        <span x-show="rapidFireResults && rapidFireResults.accuracy >= 60 && rapidFireResults.accuracy < 80">👍</span>
+        <span x-show="rapidFireResults && rapidFireResults.accuracy < 60">💪</span>
+      </div>
+      
+      <h3 style="font-size: 24px; font-weight: 700; margin-bottom: var(--spacing-md);">Rapid Fire Complete!</h3>
+      
+      <!-- Score Circle -->
+      <div style="display: flex; justify-content: center; margin: var(--spacing-2xl) 0;">
+        <div style="position: relative; width: 150px; height: 150px;">
+          <svg style="transform: rotate(-90deg);" width="150" height="150">
+            <circle cx="75" cy="75" r="65" fill="none" stroke="#e5e5e5" stroke-width="10"/>
+            <circle cx="75" cy="75" r="65" fill="none" stroke="#10b981" stroke-width="10"
+                    :stroke-dasharray="408.4" 
+                    :stroke-dashoffset="408.4 - (408.4 * (rapidFireResults ? rapidFireResults.accuracy : 0) / 100)"
+                    style="transition: stroke-dashoffset 1s ease-out;"/>
+          </svg>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; color: var(--text-primary);" x-text="rapidFireResults ? rapidFireResults.score : 0"></div>
+            <div style="font-size: 14px; color: var(--text-secondary);" x-text="'out of ' + (rapidFireResults ? rapidFireResults.total : 5)"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stats Grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg); margin: var(--spacing-2xl) 0; text-align: center;">
+        <div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);" x-text="rapidFireResults ? rapidFireResults.accuracy + '%' : '0%'"></div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: var(--spacing-xs);">Accuracy</div>
+        </div>
+        <div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);" x-text="rapidFireResults ? rapidFireResults.points : 0"></div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: var(--spacing-xs);">Points</div>
+        </div>
+        <div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);" x-text="rapidFireResults ? rapidFireResults.average_time + 's' : '0s'"></div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: var(--spacing-xs);">Avg Time</div>
+        </div>
+      </div>
+      
+      <!-- Performance Message -->
+      <div style="padding: var(--spacing-lg); background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
+        <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">
+          <span x-show="rapidFireResults && rapidFireResults.accuracy >= 80">🌟 Excellent work! You're a rapid fire champion!</span>
+          <span x-show="rapidFireResults && rapidFireResults.accuracy >= 60 && rapidFireResults.accuracy < 80">👏 Good job! Keep practicing to improve your speed and accuracy.</span>
+          <span x-show="rapidFireResults && rapidFireResults.accuracy < 60">💪 Keep going! Practice makes perfect. Try again to beat your score!</span>
+        </p>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: var(--spacing-md); justify-content: center;">
+        <button @click="startRapidFire()" class="btn btn-primary">
+          Try Again
+        </button>
+        <button @click="resetToCategories()" class="btn btn-secondary">
+          Back to Categories
+        </button>
+      </div>
+    </div>
+    
+    <!-- Rapid Fire Start Button -->
+    <div x-show="practiceMode === 'rapidfire' && !rapidFireActive && !rapidFireResults" class="card" style="margin-bottom: var(--spacing-2xl); text-align: center; padding: var(--spacing-2xl);">
+      <div style="font-size: 48px; margin-bottom: var(--spacing-lg);">⚡</div>
+      <h3 style="font-size: 20px; font-weight: 600; margin-bottom: var(--spacing-md);">Rapid Fire Challenge</h3>
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: var(--spacing-xl);">
+        Answer 5 mixed technical questions in 30 seconds each. Test your speed and accuracy!
+      </p>
+      <div style="font-size: 14px; color: var(--text-tertiary); margin-bottom: var(--spacing-lg);">
+        <div class="spinner" style="display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite;"></div>
+        <span style="margin-left: var(--spacing-sm);">Loading questions...</span>
+      </div>
+    </div>
+    
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
     
     <!-- Feedback Section -->
     <div x-show="feedback" x-cloak class="card">
@@ -291,7 +681,7 @@
 <script>
   function practicePage() {
     return {
-      // State
+      // Existing State
       started: false,
       selectedCategory: '',
       selectedCompany: '',
@@ -312,7 +702,6 @@
       progress: 0,
       timeLeft: 180,
       timer: null,
-      currentDifficulty: 'beginner',
       questionsAtLevel: 0,
       difficultyScore: 0,
       questionSaved: false,
@@ -320,6 +709,29 @@
       isListening: false,
       recognition: null,
       questionIndex: 0,
+      
+      // New State for Enhanced Features
+      practiceMode: 'interview',
+      difficulty: 'beginner',  // Changed from 'intermediate' to 'beginner' as default
+      currentDifficulty: 'beginner',  // Add currentDifficulty for UI display
+      aptitudeSubcategory: null,
+      mcqOptions: [],
+      selectedOption: null,
+      showExplanation: false,
+      correctAnswer: '',
+      explanation: '',
+      streakInfo: {},
+      recommendations: [],
+      currentQuestion: null,
+      rapidFireActive: false,
+      rapidFireResults: null,
+      rapidFireQuestions: [],
+      rapidFireIndex: 0,
+      rapidFireTimer: 30,
+      rapidFireScore: 0,
+      rapidFireAttempts: [],
+      rapidFireOptions: [],
+      rapidFireTimerInterval: null,
       
       async initPractice() {
         // Initialize categories and companies from server data
@@ -333,15 +745,43 @@
           this.companiesList = [];
         }
         
+        // Load streak and recommendations
+        await this.loadStreakInfo();
+        await this.loadRecommendations();
+        
         // Set default question
         this.question = "Select a category to begin practicing interview questions";
       },
       
       async choose(category) {
         if (!category) return;
+        
+        console.log('🎯 choose() called with category:', category);
+        
         this.selectedCategory = category;
+        
+        // Special handling for Rapid Fire - start immediately
+        if (category === 'Rapid Fire') {
+          console.log('🚀 Starting Rapid Fire mode');
+          this.started = true;
+          this.practiceMode = 'rapidfire';
+          await this.startRapidFire();
+          return;
+        }
+        
+        // Regular categories
+        console.log('📝 Starting regular practice for category:', category);
         this.started = true;
         this.questionIndex = 0;
+        
+        // Clear question cache when switching categories
+        try {
+          await fetch('/clear_question_cache', { method: 'POST' });
+          console.log('🗑️ Cleared question cache');
+        } catch (e) {
+          console.warn('Failed to clear cache:', e);
+        }
+        
         await this.setCategoryOnServer(category);
         await this.loadQuestion();
       },
@@ -367,7 +807,8 @@
         try {
           await fetch('/clear_question_cache', { method: 'POST' });
           
-          if (this.started && this.selectedCategory) {
+          // Always refresh if a category is selected, regardless of started state
+          if (this.selectedCategory) {
             this.questionIndex = 0;
             await this.setCategoryOnServer(this.selectedCategory, true);
             await this.loadQuestion();
@@ -379,43 +820,56 @@
       
       async setCategoryOnServer(cat, forceRefresh = false) {
         try {
-          const payload = { category: cat };
-          if (this.selectedCompany) payload.company = this.selectedCompany;
+          const payload = { 
+            category: cat,
+            difficulty: this.difficulty,  // Add difficulty parameter
+            company: this.selectedCompany || ""  // Always send company
+          };
           if (forceRefresh) payload.force_refresh = true;
           
-          await fetch('/set_category', {
+          console.log('📤 Sending to /set_category:', payload);
+          
+          const response = await fetch('/set_category', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
           });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✅ /set_category response:', data);
+          } else {
+            console.error('❌ /set_category failed with status:', response.status);
+          }
         } catch (e) {
-          console.warn('set_category failed', e);
+          console.warn('⚠️ set_category failed', e);
         }
       },
       
       async loadQuestion() {
         try {
-          console.log('Loading question with index:', this.questionIndex);
-          const res = await fetch('/get_mock_question?index=' + this.questionIndex);
+          console.log('📖 Loading question with index:', this.questionIndex, 'difficulty:', this.difficulty, 'category:', this.selectedCategory);
+          const res = await fetch(`/get_mock_question?index=${this.questionIndex}&difficulty=${this.difficulty}`);
           if (res.ok) {
             const data = await res.json();
+            console.log('📦 Question response:', data);
             if (data.question) {
               this.question = data.question;
               this.questionSaved = false;
               this.startTimer();
-              console.log('Question loaded:', this.question.substring(0, 50) + '...');
+              console.log('✅ Question loaded:', this.question.substring(0, 80) + '...');
             } else {
-              console.error('No question in response:', data);
+              console.error('❌ No question in response:', data);
               this.question = `Explain a concept from ${this.selectedCategory}.`;
               this.startTimer();
             }
           } else {
-            console.error('Failed to fetch question, status:', res.status);
+            console.error('❌ Failed to fetch question, status:', res.status);
             this.question = `Explain a concept from ${this.selectedCategory}.`;
             this.startTimer();
           }
         } catch (e) {
-          console.error('loadQuestion error:', e);
+          console.error('❌ loadQuestion error:', e);
           this.question = `Explain a concept from ${this.selectedCategory}.`;
           this.questionSaved = false;
           this.startTimer();
@@ -462,7 +916,7 @@
               question_text: this.question, 
               answer: msg,
               category: this.selectedCategory,
-              difficulty: this.currentDifficulty
+              difficulty: this.difficulty  // Changed from currentDifficulty to difficulty
             })
           });
           
@@ -527,12 +981,14 @@
         if (this.questionsAtLevel >= minQuestionsForPromotion) {
           if (this.currentDifficulty === 'beginner' && avgScore >= 7.0) {
             this.currentDifficulty = 'intermediate';
+            this.difficulty = 'intermediate';  // Keep both in sync
             this.questionsAtLevel = 0;
             this.difficultyScore = 0;
             alert('🎉 Promoted to INTERMEDIATE level!');
             this.loadQuestionWithDifficulty();
           } else if (this.currentDifficulty === 'intermediate' && avgScore >= 8.0) {
             this.currentDifficulty = 'advanced';
+            this.difficulty = 'advanced';  // Keep both in sync
             this.questionsAtLevel = 0;
             this.difficultyScore = 0;
             alert('🔥 Promoted to ADVANCED level!');
@@ -548,7 +1004,7 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ 
               category: this.selectedCategory,
-              difficulty: this.currentDifficulty,
+              difficulty: this.difficulty,  // Changed from currentDifficulty to difficulty
               force_refresh: true
             })
           });
@@ -583,7 +1039,7 @@
       },
       
       async nextQuestion() {
-        console.log('🔄 Next question clicked, current index:', this.questionIndex);
+        console.log('🔄 Next question clicked, current index:', this.questionIndex, 'difficulty:', this.difficulty);
         
         // Clear current state
         this.answerText = '';
@@ -596,9 +1052,9 @@
         this.questionIndex++;
         console.log('📊 New index:', this.questionIndex);
         
-        // Fetch new question
+        // Fetch new question with difficulty
         try {
-          const url = '/get_mock_question?index=' + this.questionIndex;
+          const url = `/get_mock_question?index=${this.questionIndex}&difficulty=${this.difficulty}`;
           console.log('🌐 Fetching:', url);
           
           const res = await fetch(url);
@@ -620,7 +1076,7 @@
               } else {
                 console.log('✅ New question loaded:', this.question.substring(0, 80) + '...');
                 if (data.total) {
-                  console.log(`📚 Question ${data.index + 1} of ${data.total}`);
+                  console.log(`📚 Question ${data.index + 1} of ${data.total} (${data.difficulty})`);
                 }
               }
             } else {
@@ -812,7 +1268,7 @@
             company: this.selectedCompany || '',
             notes: '',
             tags: [],
-            difficulty: this.currentDifficulty,
+            difficulty: this.difficulty,  // Changed from currentDifficulty to difficulty
             priority: 0
           };
           
@@ -907,6 +1363,285 @@
             textarea.setSelectionRange(0, 0);
           }
         }, 100);
+      },
+      
+      // New Methods for Enhanced Features
+      async loadStreakInfo() {
+        try {
+          const res = await fetch('/api/streak/info');
+          const data = await res.json();
+          if (data.success) {
+            this.streakInfo = data;
+          }
+        } catch (e) {
+          console.error('Error loading streak:', e);
+        }
+      },
+      
+      async loadRecommendations() {
+        try {
+          const res = await fetch('/api/recommendations?limit=5');
+          const data = await res.json();
+          if (data.success) {
+            this.recommendations = data.recommendations;
+          }
+        } catch (e) {
+          console.error('Error loading recommendations:', e);
+        }
+      },
+      
+      async selectAptitudeSubcategory(subcategory) {
+        this.aptitudeSubcategory = subcategory;
+        this.started = true;
+        this.practiceMode = 'mcq'; // Aptitude uses MCQ mode
+        await this.loadAptitudeQuestions();
+      },
+      
+      switchToMCQMode() {
+        this.practiceMode = 'mcq';
+        
+        // Generate MCQ options if not already present
+        if (!this.mcqOptions || this.mcqOptions.length === 0) {
+          // For regular interview questions, we don't have predefined options
+          // So we'll show a message that MCQ mode is only available for Aptitude tests
+          alert('MCQ Mode is available for Aptitude Tests. Please select an Aptitude category from the main menu.');
+          this.practiceMode = 'interview';
+          return;
+        }
+      },
+      
+      async loadAptitudeQuestions() {
+        try {
+          const res = await fetch(`/api/aptitude/questions?category=${encodeURIComponent(this.aptitudeSubcategory)}&difficulty=${this.difficulty}&count=10`);
+          const data = await res.json();
+          if (data.success && data.questions.length > 0) {
+            this.currentQuestion = data.questions[0];
+            this.question = this.currentQuestion.question;
+            this.mcqOptions = this.currentQuestion.options;
+            this.correctAnswer = this.currentQuestion.correct_answer;
+            this.explanation = this.currentQuestion.explanation;
+            this.showExplanation = false;
+            this.selectedOption = null;
+            this.startTimer();
+          }
+        } catch (e) {
+          console.error('Error loading aptitude questions:', e);
+        }
+      },
+      
+      async submitMCQ() {
+        if (!this.selectedOption) {
+          alert('Please select an answer');
+          return;
+        }
+        
+        try {
+          clearInterval(this.timer);
+          
+          const res = await fetch('/api/mcq/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              category: this.aptitudeSubcategory || this.selectedCategory,
+              question: this.question,
+              options: this.mcqOptions,
+              user_answer: this.selectedOption,
+              correct_answer: this.correctAnswer,
+              explanation: this.explanation,
+              difficulty: this.difficulty,
+              time_taken: 180 - this.timeLeft
+            })
+          });
+          
+          const data = await res.json();
+          if (data.success) {
+            this.showExplanation = true;
+            
+            // Update streak
+            await fetch('/api/streak/update', {method: 'POST'});
+            await this.loadStreakInfo();
+          }
+        } catch (e) {
+          console.error('Error submitting MCQ:', e);
+        }
+      },
+      
+      async nextMCQQuestion() {
+        this.showExplanation = false;
+        this.selectedOption = null;
+        await this.loadAptitudeQuestions();
+      },
+      
+      async changeDifficulty(newDifficulty) {
+        this.difficulty = newDifficulty;
+        this.currentDifficulty = newDifficulty;  // Keep both in sync
+        // Reset question index and reload question with new difficulty
+        this.questionIndex = 0;
+        
+        // Clear cache and refresh with new difficulty
+        try {
+          await fetch('/clear_question_cache', { method: 'POST' });
+        } catch (e) {
+          console.warn('Failed to clear cache:', e);
+        }
+        
+        if (this.aptitudeSubcategory) {
+          await this.loadAptitudeQuestions();
+        } else if (this.selectedCategory) {
+          // Refresh category with new difficulty
+          await this.setCategoryOnServer(this.selectedCategory, true);
+          await this.loadQuestion();
+        }
+      },
+      
+      async startRecommendedPractice(rec) {
+        if (rec.type === 'aptitude') {
+          this.selectedCategory = 'Aptitude';
+          await this.selectAptitudeSubcategory(rec.subcategory);
+        } else {
+          this.selectedCategory = rec.category;
+          await this.choose(rec.category);
+        }
+      },
+      
+      async startRapidFire() {
+        // Reset results
+        this.rapidFireResults = null;
+        
+        console.log('🚀 Starting Rapid Fire...');
+        
+        try {
+          const res = await fetch('/api/rapidfire/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({category: 'mixed', count: 5})
+          });
+          
+          console.log('📡 Response status:', res.status);
+          
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('❌ API error:', errorText);
+            alert('Failed to start rapid fire. Please try again.');
+            this.resetToCategories();
+            return;
+          }
+          
+          const data = await res.json();
+          console.log('📦 Rapid fire response:', data);
+          
+          if (data.success && data.questions && data.questions.length > 0) {
+            console.log('✅ Got', data.questions.length, 'questions');
+            this.rapidFireQuestions = data.questions;
+            this.rapidFireActive = true;
+            this.rapidFireIndex = 0;
+            this.rapidFireScore = 0;
+            this.rapidFireAttempts = [];
+            this.rapidFireTimer = 30;
+            this.loadRapidFireQuestion();
+            this.startRapidFireTimer();
+          } else {
+            console.error('❌ No questions in response:', data);
+            alert('Failed to start rapid fire: ' + (data.error || 'No questions available'));
+            this.resetToCategories();
+          }
+        } catch (e) {
+          console.error('❌ Error starting rapid fire:', e);
+          alert('Error starting rapid fire: ' + e.message);
+          this.resetToCategories();
+        }
+      },
+      
+      loadRapidFireQuestion() {
+        if (this.rapidFireIndex < this.rapidFireQuestions.length) {
+          const q = this.rapidFireQuestions[this.rapidFireIndex];
+          this.question = q.question;
+          this.rapidFireOptions = q.options;
+          this.correctAnswer = q.correct_answer;
+        } else {
+          this.endRapidFire();
+        }
+      },
+      
+      startRapidFireTimer() {
+        clearInterval(this.rapidFireTimerInterval);
+        this.rapidFireTimer = 30;
+        
+        this.rapidFireTimerInterval = setInterval(() => {
+          this.rapidFireTimer--;
+          if (this.rapidFireTimer <= 0) {
+            clearInterval(this.rapidFireTimerInterval);
+            this.rapidFireAnswer(null); // Time's up, move to next
+          }
+        }, 1000);
+      },
+      
+      rapidFireAnswer(answer) {
+        clearInterval(this.rapidFireTimerInterval);
+        
+        const isCorrect = answer === this.correctAnswer;
+        if (isCorrect) {
+          this.rapidFireScore++;
+        }
+        
+        this.rapidFireAttempts.push({
+          question: this.question,
+          user_answer: answer,
+          correct_answer: this.correctAnswer,
+          is_correct: isCorrect,
+          time_taken: 30 - this.rapidFireTimer
+        });
+        
+        this.rapidFireIndex++;
+        
+        if (this.rapidFireIndex < this.rapidFireQuestions.length) {
+          this.loadRapidFireQuestion();
+          this.startRapidFireTimer();
+        } else {
+          this.endRapidFire();
+        }
+      },
+      
+      async endRapidFire() {
+        clearInterval(this.rapidFireTimerInterval);
+        this.rapidFireActive = false;
+        
+        try {
+          const totalTime = this.rapidFireAttempts.reduce((sum, a) => sum + a.time_taken, 0);
+          
+          const res = await fetch('/api/rapidfire/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              category: 'mixed',
+              attempts: this.rapidFireAttempts,
+              total_time: totalTime
+            })
+          });
+          
+          const data = await res.json();
+          if (data.success) {
+            // Store results to display in UI
+            this.rapidFireResults = {
+              score: data.score,
+              total: data.total,
+              accuracy: Math.round(data.accuracy),
+              points: data.points,
+              average_time: data.average_time ? data.average_time.toFixed(1) : '0.0'
+            };
+          }
+        } catch (e) {
+          console.error('Error submitting rapid fire:', e);
+          // Show basic results even if submission fails
+          const correct = this.rapidFireAttempts.filter(a => a.is_correct).length;
+          this.rapidFireResults = {
+            score: correct,
+            total: this.rapidFireAttempts.length,
+            accuracy: Math.round((correct / this.rapidFireAttempts.length) * 100),
+            points: correct * 10,
+            average_time: '0.0'
+          };
+        }
       }
     };
   }

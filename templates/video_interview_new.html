@@ -160,7 +160,7 @@
 
 <div class="video-container">
   <div class="video-preview" id="videoPreview">
-    <video id="videoElement" autoplay muted></video>
+    <video id="videoElement" autoplay muted playsinline allow="camera; microphone"></video>
     <div id="videoPlaceholder" style="text-align: center; color: var(--text-tertiary);">
       <svg class="w-24 h-24" style="margin: 0 auto var(--spacing-md);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
@@ -455,27 +455,119 @@ function videoInterviewPage() {
     questionAudio: null,
     audioElement: null,
     interviewStarted: false,
+    cameraError: false,
     
     async init() {
-      await this.setupCamera();
+      // Don't automatically request camera - wait for user to click "Start Camera"
+      console.log('Video interview page initialized. Click "Start Camera" to begin.');
     },
     
     async setupCamera() {
       try {
+        console.log('Requesting camera and microphone access...');
+        
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          alert('Your browser does not support camera access. Please use a modern browser like Chrome, Firefox, or Edge.');
+          return;
+        }
+        
+        // Request camera and microphone access directly (skip permission check to avoid cache issues)
+        console.log('Attempting to access camera...');
+        
         this.stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { width: 1280, height: 720 }, 
+          video: {
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 }
+          }, 
           audio: true 
         });
-        document.getElementById('videoElement').srcObject = this.stream;
-        document.getElementById('videoPlaceholder').style.display = 'none';
-        document.getElementById('videoElement').style.display = 'block';
+        
+        console.log('✅ Camera access granted! Stream:', this.stream);
+        console.log('Video tracks:', this.stream.getVideoTracks());
+        console.log('Audio tracks:', this.stream.getAudioTracks());
+        
+        // Set up video element
+        const videoElement = document.getElementById('videoElement');
+        const placeholder = document.getElementById('videoPlaceholder');
+        
+        if (videoElement) {
+          videoElement.srcObject = this.stream;
+          
+          // Wait for metadata to load
+          videoElement.onloadedmetadata = () => {
+            console.log('Video metadata loaded');
+            videoElement.play().then(() => {
+              console.log('Video playing');
+              if (placeholder) placeholder.style.display = 'none';
+              videoElement.style.display = 'block';
+            }).catch(playErr => {
+              console.error('Error playing video:', playErr);
+            });
+          };
+          
+          videoElement.onerror = (err) => {
+            console.error('Video element error:', err);
+          };
+        }
+        
+        this.cameraError = false;
+        
       } catch(err) {
-        alert('Camera access denied. Please allow camera and microphone access.');
-        console.error('Camera setup error:', err);
+        console.error('❌ Camera setup error:', err);
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
+        
+        this.cameraError = true;
+        this.stream = null;
+        
+        // Special handling for permission errors when browser shows "Allowed"
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          alert('🔄 Camera permission issue detected.\n\nYour browser has a cached permission state. Please:\n\n1. Press Ctrl+Shift+Delete to open Clear browsing data\n2. Select "Cookies and other site data"\n3. Time range: "All time"\n4. Click "Clear data"\n5. Refresh this page (F5)\n6. Click "Start Camera" again\n\nOR try opening this page in an Incognito/Private window.');
+          return;
+        }
+        
+        // Provide specific error messages based on error type
+        let errorMessage = '';
+        let troubleshooting = '\n\nTo fix this:\n';
+        
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          errorMessage = '📷 No camera or microphone found.';
+          troubleshooting += '1. Make sure your camera is connected and turned on\n';
+          troubleshooting += '2. Close other apps using the camera (Zoom, Teams, Skype)\n';
+          troubleshooting += '3. Check Windows Settings > Privacy > Camera\n';
+          troubleshooting += '4. Try unplugging and reconnecting your camera\n';
+          troubleshooting += '5. Restart your browser';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          errorMessage = '⚠️ Camera is already in use.';
+          troubleshooting += '1. Close all other apps that might be using the camera\n';
+          troubleshooting += '2. Close other browser tabs with video calls\n';
+          troubleshooting += '3. Restart your browser\n';
+          troubleshooting += '4. If problem persists, restart your computer';
+        } else if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+          errorMessage = '⚙️ Camera settings not supported.';
+          troubleshooting += '1. Your camera may not support the required resolution\n';
+          troubleshooting += '2. Try using a different camera if available';
+        } else if (err.name === 'AbortError') {
+          errorMessage = '🔄 Camera access was interrupted.';
+          troubleshooting += '1. Try clicking "Start Camera" again\n';
+          troubleshooting += '2. If it keeps failing, refresh the page';
+        } else {
+          errorMessage = '❌ Camera access failed: ' + (err.message || 'Unknown error');
+          troubleshooting += '1. Refresh the page and try again\n';
+          troubleshooting += '2. Try a different browser (Chrome recommended)\n';
+          troubleshooting += '3. Check if your camera works in other apps';
+        }
+        
+        alert(errorMessage + troubleshooting);
       }
     },
     
     startInterview() {
+      if (!this.stream) {
+        alert('Please start the camera first before beginning the interview.');
+        return;
+      }
       this.interviewStarted = true;
       this.getNewQuestion(false, true);
     },

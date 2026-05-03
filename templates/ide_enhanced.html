@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor - IntervYou</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/ide-enhanced.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="ide-layout" x-data="codeEditor()" x-init="init()">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <a href="/" class="logo">IntervYou</a>
+                <span class="problem-title" x-text="currentProblem.title"></span>
+                <span class="difficulty-badge" 
+                      :class="'difficulty-' + currentProblem.difficulty"
+                      x-text="currentProblem.difficulty"></span>
+            </div>
+            <div class="top-bar-right">
+                <button class="icon-btn" @click="toggleTheme()" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn" @click="toggleFullscreen()" title="Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="icon-btn" @click="showSettings()" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Problem Description Panel -->
+        <div class="problem-panel">
+            <div class="panel-tabs">
+                <button class="panel-tab" 
+                        :class="problemTab === 'description' ? 'active' : ''"
+                        @click="problemTab = 'description'">
+                    Description
+                </button>
+                <button class="panel-tab"
+                        :class="problemTab === 'hints' ? 'active' : ''"
+                        @click="problemTab = 'hints'">
+                    Hints
+                </button>
+                <button class="panel-tab"
+                        :class="problemTab === 'notes' ? 'active' : ''"
+                        @click="problemTab = 'notes'">
+                    Notes
+                </button>
+            </div>
+
+            <!-- Description Tab -->
+            <div class="panel-content" x-show="problemTab === 'description'">
+                <div class="problem-description">
+                    <h2 x-text="currentProblem.title"></h2>
+                    <p x-html="currentProblem.description"></p>
+
+                    <template x-for="(example, index) in currentProblem.examples" :key="index">
+                        <div class="example-box">
+                            <strong x-text="'Example ' + (index + 1) + ':'"></strong>
+                            <div x-html="example"></div>
+                        </div>
+                    </template>
+
+                    <div class="constraints">
+                        <h3>Constraints:</h3>
+                        <ul>
+                            <template x-for="constraint in currentProblem.constraints" :key="constraint">
+                                <li x-text="constraint"></li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hints Tab -->
+            <div class="panel-content" x-show="problemTab === 'hints'">
+                <template x-for="(hint, index) in currentProblem.hints" :key="index">
+                    <div>
+                        <button class="hint-toggle" @click="toggleHint(index)">
+                            <i class="fas fa-lightbulb"></i>
+                            <span x-text="'Hint ' + (index + 1)"></span>
+                            <i class="fas" :class="shownHints.includes(index) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                        <div class="hint-box" x-show="shownHints.includes(index)">
+                            <p x-text="hint"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Notes Tab -->
+            <div class="panel-content" x-show="problemTab === 'notes'">
+                <textarea class="notes-editor" 
+                          x-model="notes" 
+                          placeholder="Write your notes here..."
+                          @input="saveNotes()"></textarea>
+            </div>
+        </div>
+
+        <!-- Editor Panel -->
+        <div class="editor-panel">
+            <div class="editor-toolbar">
+                <div class="editor-toolbar-left">
+                    <select class="language-select" x-model="language" @change="changeLanguage()">
+                        <option value="python">Python 3</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="c">C</option>
+                    </select>
+                    <button class="toolbar-btn" @click="resetCode()">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+                <div class="editor-toolbar-right">
+                    <button class="toolbar-btn" @click="runCode()">
+                        <i class="fas fa-play"></i> Run
+                    </button>
+                    <button class="toolbar-btn primary" @click="submitCode()">
+                        <i class="fas fa-check"></i> Submit
+                    </button>
+                </div>
+            </div>
+            <div id="monaco-editor"></div>
+        </div>
+
+        <!-- Console Panel -->
+        <div class="console-panel">
+            <div class="console-tabs">
+                <button class="console-tab"
+                        :class="consoleTab === 'testcases' ? 'active' : ''"
+                        @click="consoleTab = 'testcases'">
+                    <i class="fas fa-vial"></i> Test Cases
+                </button>
+                <button class="console-tab"
+                        :class="consoleTab === 'output' ? 'active' : ''"
+                        @click="consoleTab = 'output'">
+                    <i class="fas fa-terminal"></i> Output
+                </button>
+                <button class="console-tab"
+                        :class="consoleTab === 'submissions' ? 'active' : ''"
+                        @click="consoleTab = 'submissions'">
+                    <i class="fas fa-history"></i> Submissions
+                </button>
+            </div>
+
+            <!-- Test Cases Tab -->
+            <div class="console-content" x-show="consoleTab === 'testcases'">
+                <template x-for="(testCase, index) in testCases" :key="index">
+                    <div class="test-case">
+                        <div class="test-case-header">
+                            <span class="test-case-title" x-text="'Test Case ' + (index + 1)"></span>
+                            <span class="test-case-status" 
+                                  :class="testCase.status"
+                                  x-text="testCase.status === 'passed' ? 'Passed ✓' : testCase.status === 'failed' ? 'Failed ✗' : 'Not Run'"></span>
+                        </div>
+                        <div class="test-case-body">
+                            <div class="test-case-row">
+                                <span class="test-case-label">Input:</span>
+                                <span class="test-case-value" x-text="testCase.input"></span>
+                            </div>
+                            <div class="test-case-row">
+                                <span class="test-case-label">Expected:</span>
+                                <span class="test-case-value" x-text="testCase.expected"></span>
+                            </div>
+                            <div class="test-case-row" x-show="testCase.actual">
+                                <span class="test-case-label">Actual:</span>
+                                <span class="test-case-value" x-text="testCase.actual"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Output Tab -->
+            <div class="console-content" x-show="consoleTab === 'output'">
+                <div class="output-box" 
+                     :class="output.type"
+                     x-show="output.content">
+                    <pre x-text="output.content"></pre>
+                </div>
+                <div x-show="!output.content" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                    <i class="fas fa-info-circle" style="font-size: 32px; margin-bottom: 12px;"></i>
+                    <p>Run your code to see output</p>
+                </div>
+            </div>
+
+            <!-- Submissions Tab -->
+            <div class="console-content" x-show="consoleTab === 'submissions'">
+                <template x-for="(submission, index) in submissions" :key="index">
+                    <div class="submission-item" @click="loadSubmission(submission)">
+                        <div class="submission-header">
+                            <span class="submission-status" :class="submission.status" x-text="submission.status === 'accepted' ? 'Accepted' : 'Wrong Answer'"></span>
+                            <span class="submission-time" x-text="submission.time"></span>
+                        </div>
+                        <div class="submission-details">
+                            <span x-text="submission.language"></span> • 
+                            <span x-text="submission.runtime"></span> • 
+                            <span x-text="submission.memory"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="submissions.length === 0" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                    <i class="fas fa-history" style="font-size: 32px; margin-bottom: 12px;"></i>
+                    <p>No submissions yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monaco Editor -->
+    <script src="https://unpkg.com/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ url_for('static', path='/ide-enhanced.js') }}"></script>
+</body>
+</html>

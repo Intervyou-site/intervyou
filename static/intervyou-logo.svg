@@ -1,0 +1,79 @@
+<svg width="520" height="140" viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- ================= DEFINITIONS ================= -->
+  <defs>
+    <!-- Icon Gradient -->
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F8CFF"/>
+      <stop offset="100%" stop-color="#6C5BFF"/>
+    </linearGradient>
+
+    <!-- You Gradient -->
+    <linearGradient id="youGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+
+    <!-- Soft Shadow -->
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- ================= ICON ================= -->
+  <g transform="translate(0,20)" filter="url(#softShadow)">
+    
+    <!-- Rounded Square Background -->
+    <rect x="0" y="0" width="100" height="100" rx="28" fill="url(#iconGradient)"/>
+    
+    <!-- Chat Bubble -->
+    <g transform="translate(25,30)">
+      <rect x="0" y="0" width="50" height="36" rx="10" fill="white"/>
+      <polygon points="22,36 30,36 26,46" fill="white"/>
+
+      <!-- AI Text -->
+      <text x="12" y="24"
+            font-family="Inter, Arial, sans-serif"
+            font-size="16"
+            font-weight="700"
+            fill="#4F46E5">
+        AI
+      </text>
+
+      <!-- Circuit Dots -->
+      <circle cx="-10" cy="8" r="4" fill="white"/>
+      <circle cx="60" cy="8" r="4" fill="white"/>
+      <circle cx="-10" cy="28" r="4" fill="white"/>
+      <circle cx="60" cy="28" r="4" fill="white"/>
+
+      <line x1="-6" y1="8" x2="0" y2="8" stroke="white" stroke-width="2"/>
+      <line x1="50" y1="8" x2="56" y2="8" stroke="white" stroke-width="2"/>
+      <line x1="-6" y1="28" x2="0" y2="28" stroke="white" stroke-width="2"/>
+      <line x1="50" y1="28" x2="56" y2="28" stroke="white" stroke-width="2"/>
+    </g>
+
+  </g>
+
+  <!-- ================= BRAND TEXT ================= -->
+
+  <!-- Interv -->
+  <text x="140" y="88"
+        font-family="Inter, Arial, sans-serif"
+        font-size="56"
+        font-weight="700"
+        fill="#F8FAFC"
+        letter-spacing="-1">
+    Interv
+  </text>
+
+  <!-- You -->
+  <text x="340" y="88"
+        font-family="Inter, Arial, sans-serif"
+        font-size="56"
+        font-weight="700"
+        fill="url(#youGradient)"
+        letter-spacing="-1">
+    You
+  </text>
+
+</svg>

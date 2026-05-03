@@ -134,6 +134,78 @@
     font-weight: 700;
     margin: 0 auto var(--spacing-sm);
   }
+  
+  .analysis-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    display: none;
+  }
+  
+  .analysis-panel.show {
+    display: block;
+  }
+  
+  .score-breakdown {
+    display: grid;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+  }
+  
+  .score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+  
+  .score-item-label {
+    color: var(--text-secondary);
+  }
+  
+  .score-item-value {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  .analysis-section {
+    margin-top: var(--spacing-md);
+  }
+  
+  .analysis-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .analysis-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .analysis-list li {
+    padding: var(--spacing-xs) 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: start;
+    gap: var(--spacing-xs);
+  }
+  
+  .analysis-list li:before {
+    content: "•";
+    color: var(--accent-primary);
+    font-weight: bold;
+  }
+  
+  .template-selector {
+    margin-bottom: var(--spacing-md);
+  }
 </style>
 {% endblock %}
 
@@ -238,12 +310,32 @@
       </div>
     </div>
     
+    <div class="form-section">
+      <h3 class="section-title">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 010 2H6v10h4a1 1 0 110 2H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v12a1 1 0 01-1 1h-4a1 1 0 110-2h3V6h-3a1 1 0 01-1-1z"/>
+        </svg>
+        Template
+      </h3>
+      
+      <div class="form-group">
+        <label class="form-label">Choose Template Style</label>
+        <select class="form-input" id="templateSelect">
+          <option value="modern_blue">Modern Blue (Centered Header)</option>
+          <option value="classic">Classic Professional</option>
+          <option value="creative_dark">Creative Dark (Sidebar)</option>
+          <option value="clean_minimal">Clean Minimal</option>
+          <option value="purple_accent">Purple Accent</option>
+        </select>
+      </div>
+    </div>
+    
     <div style="display: flex; gap: var(--spacing-sm);">
       <button class="btn btn-primary" onclick="generateResume()">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        Generate Resume
+        Analyze Resume
       </button>
       <button class="btn btn-secondary" onclick="downloadPDF()">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,10 +348,53 @@
   
   <div class="resume-preview">
     <div class="ats-score">
-      <div class="score-circle" id="atsScore">85</div>
+      <div class="score-circle" id="atsScore">0</div>
       <div style="text-align: center;">
         <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">ATS Score</div>
-        <div style="font-size: 12px; opacity: 0.9;">Your resume is well-optimized</div>
+        <div style="font-size: 12px; opacity: 0.9;">Click "Analyze Resume" for detailed feedback</div>
+      </div>
+    </div>
+    
+    <div class="analysis-panel" id="analysisPanel">
+      <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-md);">
+        📊 Detailed Analysis
+      </h3>
+      
+      <div class="score-breakdown">
+        <div class="score-item">
+          <span class="score-item-label">Contact Info</span>
+          <span class="score-item-value" id="contactScore">0/15</span>
+        </div>
+        <div class="score-item">
+          <span class="score-item-label">Summary</span>
+          <span class="score-item-value" id="summaryScore">0/15</span>
+        </div>
+        <div class="score-item">
+          <span class="score-item-label">Experience</span>
+          <span class="score-item-value" id="experienceScore">0/30</span>
+        </div>
+        <div class="score-item">
+          <span class="score-item-label">Education</span>
+          <span class="score-item-value" id="educationScore">0/15</span>
+        </div>
+        <div class="score-item">
+          <span class="score-item-label">Skills</span>
+          <span class="score-item-value" id="skillsScore">0/15</span>
+        </div>
+      </div>
+      
+      <div class="analysis-section">
+        <h4>✅ Strengths</h4>
+        <ul class="analysis-list" id="strengthsList">
+          <li>Complete analysis after clicking "Analyze Resume"</li>
+        </ul>
+      </div>
+      
+      <div class="analysis-section">
+        <h4>💡 Improvements</h4>
+        <ul class="analysis-list" id="improvementsList">
+          <li>Complete analysis after clicking "Analyze Resume"</li>
+        </ul>
       </div>
     </div>
     
@@ -533,19 +668,53 @@ async function generateResume() {
       alert('Error: ' + analysis.error);
     } else {
       // Update ATS score
-      document.getElementById('atsScore').textContent = analysis.ats_score || 0;
+      const score = analysis.overall_score || analysis.ats_score || 0;
+      document.getElementById('atsScore').textContent = score;
       
-      // Show analysis results
-      alert(`ATS Score: ${analysis.ats_score}/100\n\nStrengths:\n${analysis.strengths.join('\n')}\n\nSuggestions:\n${analysis.weaknesses.join('\n')}`);
+      // Update score breakdown
+      if (analysis.breakdown) {
+        document.getElementById('contactScore').textContent = 
+          `${analysis.breakdown.contact_info.score}/${analysis.breakdown.contact_info.max}`;
+        document.getElementById('summaryScore').textContent = 
+          `${analysis.breakdown.summary.score}/${analysis.breakdown.summary.max}`;
+        document.getElementById('experienceScore').textContent = 
+          `${analysis.breakdown.experience.score}/${analysis.breakdown.experience.max}`;
+        document.getElementById('educationScore').textContent = 
+          `${analysis.breakdown.education.score}/${analysis.breakdown.education.max}`;
+        document.getElementById('skillsScore').textContent = 
+          `${analysis.breakdown.skills.score}/${analysis.breakdown.skills.max}`;
+      }
+      
+      // Update strengths list
+      const strengthsList = document.getElementById('strengthsList');
+      if (analysis.strengths && analysis.strengths.length > 0) {
+        strengthsList.innerHTML = analysis.strengths.map(s => `<li>${s}</li>`).join('');
+      } else {
+        strengthsList.innerHTML = '<li>Add more content to see strengths</li>';
+      }
+      
+      // Update improvements list
+      const improvementsList = document.getElementById('improvementsList');
+      if (analysis.improvements && analysis.improvements.length > 0) {
+        improvementsList.innerHTML = analysis.improvements.slice(0, 8).map(i => `<li>${i}</li>`).join('');
+      } else {
+        improvementsList.innerHTML = '<li>Great job! Resume looks good</li>';
+      }
+      
+      // Show analysis panel
+      document.getElementById('analysisPanel').classList.add('show');
+      
+      // Log full analysis for debugging
+      console.log('Full Analysis:', analysis);
     }
     
     btn.disabled = false;
-    btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Generate Resume';
+    btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Analyze Resume';
   } catch (err) {
     console.error('Error:', err);
     alert('Failed to analyze resume. Please try again.');
     event.target.disabled = false;
-    event.target.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Generate Resume';
+    event.target.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Analyze Resume';
   }
 }
 
@@ -555,10 +724,16 @@ async function downloadPDF() {
     btn.disabled = true;
     btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...';
     
+    // Add template selection (default to modern)
+    const template = document.getElementById('templateSelect') ? 
+      document.getElementById('templateSelect').value : 'modern';
+    
+    const dataWithTemplate = { ...resumeData, template: template };
+    
     const response = await fetch('/api/resume/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(resumeData)
+      body: JSON.stringify(dataWithTemplate)
     });
     
     if (response.ok) {
@@ -566,7 +741,7 @@ async function downloadPDF() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `resume_${resumeData.name.replace(/\s+/g, '_')}.pdf`;
+      a.download = `resume_${resumeData.name.replace(/\s+/g, '_')}_${template}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

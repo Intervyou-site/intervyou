@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    image: intervyou:latest
+    container_name: intervyou-app
+    ports:
+      - "8000:8000"
+    environment:
+      # Application Settings
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production-docker-deployment}
+      - DATABASE_URL=sqlite:///./database.db
+      - ENVIRONMENT=docker
+      
+      # API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      
+      # OAuth Configuration
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      
+      # Email Configuration
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM:-${MAIL_USERNAME}}
+      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      
+      # Security Settings
+      - RATE_LIMIT_ENABLED=true
+      - MAX_LOGIN_ATTEMPTS=5
+      - ACCOUNT_LOCKOUT_MINUTES=15
+      
+      # Application Port
+      - PORT=8000
+    
+    volumes:
+      # Persist database
+      - ./database.db:/app/database.db
+      # Persist uploads
+      - ./uploads:/app/uploads
+      - ./static/audio:/app/static/audio
+      - ./static/uploads:/app/static/uploads
+      # Persist logs
+      - ./logs:/app/logs
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    networks:
+      - intervyou-network
+
+networks:
+  intervyou-network:
+    driver: bridge
