@@ -3554,100 +3554,108 @@ async def upload_video(
         transcription = ""
         transcription_method = "none"
         
-        # Method 1: Try Vosk (offline, no API key needed)
+        # Method 1: Try Google Speech Recognition (FREE, no model needed)
         try:
-            logger.info("🎤 Attempting Vosk offline transcription...")
+            logger.info("🎤 Attempting Google Speech Recognition...")
+            import speech_recognition as sr
+            recognizer = sr.Recognizer()
             
-            # Convert to WAV first
+            # Convert webm to wav
             from pydub import AudioSegment
             audio = AudioSegment.from_file(video_path, format="webm")
             wav_path = video_path.replace(".webm", ".wav")
-            # Vosk needs 16kHz mono
-            audio = audio.set_frame_rate(16000).set_channels(1)
             audio.export(wav_path, format="wav")
             
-            logger.info(f"Audio converted to WAV: {wav_path}")
+            with sr.AudioFile(wav_path) as source:
+                recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                audio_data = recognizer.record(source)
+                
+                try:
+                    transcription = recognizer.recognize_google(audio_data)
+                    transcription_method = "google"
+                    logger.info(f"✅ Google transcription: '{transcription}'")
+                except sr.UnknownValueError:
+                    logger.warning("❌ Google could not understand audio")
+                except sr.RequestError as e:
+                    logger.error(f"❌ Google service error: {e}")
             
-            # Check if model exists
-            model_path = "vosk-model-small-en-us-0.15"
-            if os.path.exists(model_path):
-                from vosk import Model, KaldiRecognizer
-                import wave
-                import json as json_lib
-                
-                logger.info(f"Loading Vosk model from {model_path}")
-                model = Model(model_path)
-                wf = wave.open(wav_path, "rb")
-                rec = KaldiRecognizer(model, wf.getframerate())
-                rec.SetWords(True)
-                
-                result_text = []
-                while True:
-                    data = wf.readframes(4000)
-                    if len(data) == 0:
-                        break
-                    if rec.AcceptWaveform(data):
-                        result = json_lib.loads(rec.Result())
-                        if 'text' in result and result['text']:
-                            result_text.append(result['text'])
-                
-                # Get final result
-                final_result = json_lib.loads(rec.FinalResult())
-                if 'text' in final_result and final_result['text']:
-                    result_text.append(final_result['text'])
-                
-                transcription = ' '.join(result_text).strip()
-                if transcription:
-                    transcription_method = "vosk"
-                    logger.info(f"✅ Vosk transcription: '{transcription}'")
-                else:
-                    logger.warning("⚠️ Vosk returned empty transcription")
-                
-                wf.close()
-            else:
-                logger.warning(f"⚠️ Vosk model not found at {model_path}, trying Google...")
-            
-            # Clean up wav
+            # Clean up wav file
             try:
                 os.unlink(wav_path)
             except:
                 pass
                 
-        except ImportError as e:
-            logger.info(f"⚠️ Vosk not available: {e}, trying Google...")
         except Exception as e:
-            logger.warning(f"⚠️ Vosk failed: {e}")
+            logger.error(f"❌ Google transcription error: {e}")
             import traceback
             logger.error(traceback.format_exc())
         
-        # Method 2: Try Google Speech Recognition (FREE FALLBACK)
+        # Method 2: Try Vosk (offline, fallback if Google fails)
         if not transcription:
             try:
-                logger.info("🎤 Attempting Google Speech Recognition...")
-                import speech_recognition as sr
-                recognizer = sr.Recognizer()
+                logger.info("🎤 Attempting Vosk offline transcription...")
                 
-                # Convert webm to wav
+                # Convert to WAV first
                 from pydub import AudioSegment
                 audio = AudioSegment.from_file(video_path, format="webm")
                 wav_path = video_path.replace(".webm", ".wav")
+                # Vosk needs 16kHz mono
+                audio = audio.set_frame_rate(16000).set_channels(1)
                 audio.export(wav_path, format="wav")
                 
-                with sr.AudioFile(wav_path) as source:
-                    recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                    audio_data = recognizer.record(source)
-                    
-                    try:
-                        transcription = recognizer.recognize_google(audio_data)
-                        transcription_method = "google"
-                        logger.info(f"✅ Google transcription: '{transcription}'")
-                    except sr.UnknownValueError:
-                        logger.warning("❌ Google could not understand audio")
-                    except sr.RequestError as e:
-                        logger.error(f"❌ Google service error: {e}")
+                logger.info(f"Audio converted to WAV: {wav_path}")
                 
-                # Clean up wav file
+                # Check if model exists
+                model_path = "vosk-model-small-en-us-0.15"
+                if os.path.exists(model_path):
+                    from vosk import Model, KaldiRecognizer
+                    import wave
+                    import json as json_lib
+                    
+                    logger.info(f"Loading Vosk model from {model_path}")
+                    model = Model(model_path)
+                    wf = wave.open(wav_path, "rb")
+                    rec = KaldiRecognizer(model, wf.getframerate())
+                    rec.SetWords(True)
+                    
+                    result_text = []
+                    while True:
+                        data = wf.readframes(4000)
+                        if len(data) == 0:
+                            break
+                        if rec.AcceptWaveform(data):
+                            result = json_lib.loads(rec.Result())
+                            if 'text' in result and result['text']:
+                                result_text.append(result['text'])
+                    
+                    # Get final result
+                    final_result = json_lib.loads(rec.FinalResult())
+                    if 'text' in final_result and final_result['text']:
+                        result_text.append(final_result['text'])
+                    
+                    transcription = ' '.join(result_text).strip()
+                    if transcription:
+                        transcription_method = "vosk"
+                        logger.info(f"✅ Vosk transcription: '{transcription}'")
+                    else:
+                        logger.warning("⚠️ Vosk returned empty transcription")
+                    
+                    wf.close()
+                else:
+                    logger.warning(f"⚠️ Vosk model not found at {model_path}")
+                
+                # Clean up wav
                 try:
+                    os.unlink(wav_path)
+                except:
+                    pass
+                    
+            except ImportError as e:
+                logger.info(f"⚠️ Vosk not available: {e}")
+            except Exception as e:
+                logger.warning(f"⚠️ Vosk failed: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
                     os.unlink(wav_path)
                 except:
                     pass
