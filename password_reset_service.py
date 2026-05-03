@@ -30,7 +30,9 @@ class PasswordResetStorage:
             'attempts': 0
         }
         
-        logger.info(f"📧 Generated OTP for {email}: {otp}")
+        logger.info(f"✅ OTP created for {email}")
+        logger.info(f"✅ OTP will expire at: {self.otps[email]['expires_at'].strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        
         return otp
     
     def verify_otp(self, email: str, otp: str, max_attempts: int = 3) -> Tuple[bool, str]:
@@ -96,14 +98,32 @@ def send_password_reset_email(email: str, otp: str, expiry_minutes: int = 10) ->
     For now, just logs the OTP (in production, use actual email service)
     """
     try:
-        logger.info("=" * 60)
-        logger.info(f"📧 PASSWORD RESET OTP")
+        # Make OTP VERY visible in logs
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("=" * 80)
+        logger.info("📧 📧 📧  PASSWORD RESET OTP CODE  📧 📧 📧")
+        logger.info("=" * 80)
         logger.info(f"📧 Email: {email}")
         logger.info(f"📧 OTP Code: {otp}")
         logger.info(f"📧 Valid for: {expiry_minutes} minutes")
-        logger.info("=" * 60)
+        logger.info(f"📧 Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        logger.info("=" * 80)
+        logger.info("⚠️  CHECK RAILWAY LOGS TO SEE THIS OTP CODE")
         logger.info("⚠️  In production, this would be sent via email service")
-        logger.info("⚠️  For now, check Railway logs to see the OTP")
+        logger.info("=" * 80)
+        logger.info("")
+        
+        # Also print to stdout to ensure it appears in Railway logs
+        print("")
+        print("=" * 80)
+        print("📧 📧 📧  PASSWORD RESET OTP CODE  📧 📧 📧")
+        print("=" * 80)
+        print(f"📧 Email: {email}")
+        print(f"📧 OTP Code: {otp}")
+        print(f"📧 Valid for: {expiry_minutes} minutes")
+        print("=" * 80)
+        print("")
         
         # TODO: Integrate with actual email service
         # Example with your existing email config:

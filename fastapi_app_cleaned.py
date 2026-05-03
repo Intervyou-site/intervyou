@@ -369,14 +369,17 @@ except ImportError as e:
     logger.warning("⚠️  Running without enhanced security features")
     SECURITY_ENABLED = False
     
-    # Fallback: Add basic session middleware
+    # Fallback: Add basic session middleware with OAuth-compatible settings
+    is_production = os.getenv("ENVIRONMENT") == "production"
     app.add_middleware(
         SessionMiddleware,
         secret_key=Config.SECRET_KEY,
-        https_only=os.getenv("ENVIRONMENT") == "production",
-        max_age=86400,
-        same_site="lax",
-        session_cookie="session"
+        session_cookie="intervyou_session",  # Unique cookie name
+        https_only=is_production,
+        max_age=86400,  # 24 hours
+        same_site="lax",  # Required for OAuth redirects
+        path="/",  # Ensure cookie is available for all paths
+        domain=None  # Let browser determine domain
     )
 
 # ================================

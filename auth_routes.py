@@ -71,21 +71,47 @@ def add_flash(request: Request, message: str, category: str = "info"):
 
 @router.get("/auth/google")
 async def google_login(request: Request):
-    """Initiate Google OAuth login"""
-    redirect_uri = request.url_for('google_callback')
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    """Initiate Google OAuth login with proper state management"""
+    try:
+        # Generate redirect URI
+        redirect_uri = str(request.url_for('google_callback'))
+        
+        # Log the OAuth initiation
+        logger.info(f"🔐 Initiating Google OAuth - Redirect URI: {redirect_uri}")
+        
+        # Ensure session is saved before redirect
+        # The authorize_redirect will store state in session
+        response = await oauth.google.authorize_redirect(request, redirect_uri)
+        
+        # Log session state for debugging
+        logger.info(f"🔐 OAuth state stored in session: {bool(request.session.get('_state_google_'))}")
+        
+        return response
+    except Exception as e:
+        logger.error(f"❌ Failed to initiate Google OAuth: {e}")
+        add_flash(request, "Failed to initiate Google login. Please try again.", "danger")
+        return RedirectResponse("/login", status_code=303)
 
 
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
-    """Handle Google OAuth callback with enhanced security"""
+    """Handle Google OAuth callback with enhanced security and debugging"""
     from fastapi_app_cleaned import User, get_password_hash
     
     try:
+        # Log callback details for debugging
+        logger.info(f"🔐 Google OAuth callback received")
+        logger.info(f"🔐 Session keys: {list(request.session.keys())}")
+        logger.info(f"🔐 Query params: {dict(request.query_params)}")
+        
+        # Authorize and get token
         token = await oauth.google.authorize_access_token(request)
+        
+        # Get user info from token
         user_info = token.get('userinfo')
         
         if not user_info:
+            logger.error("❌ No userinfo in token")
             add_flash(request, "Failed to get user info from Google", "danger")
             return RedirectResponse("/login", status_code=303)
         
@@ -94,8 +120,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         
         # Validate email
         if not email:
+            logger.error("❌ No email in userinfo")
             add_flash(request, "No email provided by Google", "danger")
             return RedirectResponse("/login", status_code=303)
+        
+        logger.info(f"✅ Google OAuth successful for: {email}")
         
         # Check if user exists
         user = db.query(User).filter_by(email=email).first()
@@ -129,11 +158,15 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         create_secure_session(request, user.id, remember_me=False)
         request.session["oauth_provider"] = "google"
         
+        logger.info(f"✅ Session created for user {user.id}")
+        
         return RedirectResponse("/", status_code=303)
         
     except Exception as e:
         logger.error(f"❌ Google OAuth error: {e}")
-        add_flash(request, "Google login failed. Please try again.", "danger")
+        logger.error(f"❌ Error type: {type(e).__name__}")
+        logger.error(f"❌ Session state: {request.session.get('_state_google_', 'NOT FOUND')}")
+        add_flash(request, f"Google login failed: {str(e)}", "danger")
         return RedirectResponse("/login", status_code=303)
 
 

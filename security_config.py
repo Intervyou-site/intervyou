@@ -453,15 +453,19 @@ def configure_security(app):
                 allowed_hosts=trusted_hosts
             )
     
-    # Configure session middleware with secure settings
+    # Configure session middleware with secure settings optimized for OAuth
     secret_key = os.getenv("SECRET_KEY")
+    is_production = os.getenv("ENVIRONMENT") == "production"
+    
     app.add_middleware(
         SessionMiddleware,
         secret_key=secret_key,
-        session_cookie="session",
+        session_cookie="intervyou_session",  # Unique cookie name
         max_age=86400,  # 24 hours
-        same_site="lax",
-        https_only=os.getenv("ENVIRONMENT") == "production"
+        same_site="lax",  # Required for OAuth redirects
+        https_only=is_production,
+        path="/",  # Ensure cookie is available for all paths
+        domain=None  # Let browser determine domain
     )
     
     # Log security configuration
