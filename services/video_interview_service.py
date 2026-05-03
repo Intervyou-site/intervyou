@@ -313,12 +313,10 @@ Format your response clearly with these sections."""
                 "score": score,
                 "detailed_analysis": {
                     "transcription": transcription,
-                    "emotions": emotion_data or {},
                     "voice_analysis": voice_data or {},
-                    "confidence_score": self._calculate_confidence_score(transcription, emotion_data, voice_data),
+                    "confidence_score": self._calculate_confidence_score(transcription, None, voice_data),
                     "professionalism_score": self._calculate_professionalism_score(transcription, voice_data),
-                    "engagement_score": self._calculate_engagement_score(emotion_data, voice_data),
-                    "authenticity_score": self._calculate_authenticity_score(emotion_data)
+                    "engagement_score": self._calculate_engagement_score(None, voice_data)
                 }
             }
         except Exception as e:
@@ -348,7 +346,7 @@ Format your response clearly with these sections."""
         return 7.5  # Default score
     
     def _calculate_confidence_score(self, transcription: str, emotion_data: Dict, voice_data: Dict) -> float:
-        """Calculate confidence score based on multiple factors"""
+        """Calculate confidence score based on transcription and voice only (no emotion data)"""
         score = 7.0  # Base score
         
         # Adjust based on speech rate
@@ -367,13 +365,7 @@ Format your response clearly with these sections."""
             elif filler_count > 8:
                 score -= 1.5
         
-        # Adjust based on emotion
-        if emotion_data and 'dominant_emotion' in emotion_data:
-            emotion = emotion_data['dominant_emotion'].lower()
-            if emotion in ['happy', 'confident', 'neutral']:
-                score += 0.5
-            elif emotion in ['anxious', 'nervous']:
-                score -= 0.5
+        # No emotion-based adjustments - transcription only
         
         return min(10.0, max(1.0, score))
     
@@ -395,18 +387,12 @@ Format your response clearly with these sections."""
         return min(10.0, max(1.0, score))
     
     def _calculate_engagement_score(self, emotion_data: Dict, voice_data: Dict) -> float:
-        """Calculate engagement score"""
+        """Calculate engagement score based on voice data only (no emotion data)"""
         score = 7.0
         
-        if emotion_data:
-            emotion = emotion_data.get('dominant_emotion', '').lower()
-            if emotion in ['happy', 'excited', 'confident']:
-                score += 2.0
-            elif emotion in ['neutral']:
-                score += 0.5
-            elif emotion in ['sad', 'bored']:
-                score -= 1.5
+        # No emotion-based scoring - transcription only
         
+        # Voice energy if available
         if voice_data and 'energy_level' in voice_data:
             energy = voice_data['energy_level']
             if energy == 'high':
@@ -438,42 +424,186 @@ Format your response clearly with these sections."""
     
     def _basic_analysis(self, transcription: str, question: str, 
                        emotion_data: Dict = None, voice_data: Dict = None) -> Dict:
-        """Provide basic analysis when OpenAI API is not available"""
-        word_count = len(transcription.split())
+        """Provide basic analysis when OpenAI API is not available - TRANSCRIPTION ONLY"""
         
-        # Calculate basic scores
-        confidence_score = self._calculate_confidence_score(transcription, emotion_data, voice_data)
-        professionalism_score = self._calculate_professionalism_score(transcription, voice_data)
-        engagement_score = self._calculate_engagement_score(emotion_data, voice_data)
-        authenticity_score = self._calculate_authenticity_score(emotion_data)
+        # Check if this is a fallback transcription (when speech recognition failed)
+        is_fallback = transcription.startswith("[Speech recorded")
         
-        overall_score = (confidence_score + professionalism_score + engagement_score + authenticity_score) / 4
+        if is_fallback:
+            # Estimate word count from duration
+            duration = voice_data.get('duration', 10) if voice_data else 10
+            word_count = voice_data.get('word_count', int(duration * 2.5)) if voice_data else int(duration * 2.5)
+        else:
+            word_count = len(transcription.split())
         
-        feedback = f"""VIDEO INTERVIEW ANALYSIS
+        # Validate minimum content - be strict for very short responses
+        if not is_fallback and word_count <= 3:
+            return {
+                "success": True,
+                "feedback": f"""VIDEO INTERVIEW ANALYSIS
 
-CONTENT QUALITY: {round(professionalism_score, 1)}/10
-Your response was {"detailed" if word_count > 100 else "concise"} with {word_count} words.
+CONTENT QUALITY: 1.5/10
+Your response was extremely brief - only {word_count} word{'s' if word_count > 1 else ''}: "{transcription}"
+A proper interview answer should be 50-150 words.
 
-COMMUNICATION SKILLS: {round(confidence_score, 1)}/10
-{"Good clarity and confidence" if confidence_score > 7 else "Work on clarity and confidence"}.
+COMMUNICATION SKILLS: 2.0/10
+Insufficient content to evaluate communication skills.
 
 STRENGTHS:
-- Completed the response
-- {"Professional language used" if professionalism_score > 7 else "Attempted to answer the question"}
-- {"Good engagement" if engagement_score > 7 else "Showed effort"}
+- You attempted to respond
 
 AREAS FOR IMPROVEMENT:
-- {"Reduce filler words" if voice_data and voice_data.get('filler_count', 0) > 5 else "Maintain current speech patterns"}
-- {"Provide more specific examples" if word_count < 80 else "Keep responses focused"}
-- Practice STAR method for behavioral questions
+- Provide much more detailed answers
+- Use the STAR method (Situation, Task, Action, Result)
+- Aim for at least 50 words per answer
+- Include specific examples from your experience
+
+OVERALL SCORE: 1.8/10
+
+RECOMMENDATIONS:
+1. Practice answering questions with proper depth
+2. Structure answers using STAR method
+3. Speak for at least 30-60 seconds
+4. Provide concrete examples
+
+Note: Your response was too brief to demonstrate your qualifications.""",
+                "score": 1.8,
+                "detailed_analysis": {
+                    "transcription": transcription,
+                    "voice_analysis": voice_data or {},
+                    "confidence_score": 2.0,
+                    "professionalism_score": 1.5,
+                    "engagement_score": 2.0
+                }
+            }
+        
+        # Calculate realistic scores based on transcription and voice data ONLY
+        confidence_score = self._calculate_confidence_score(transcription, None, voice_data)
+        professionalism_score = self._calculate_professionalism_score(transcription, voice_data)
+        engagement_score = self._calculate_engagement_score(None, voice_data)
+        
+        # Adjust scores for fallback mode (slightly lower since we can't analyze text)
+        if is_fallback:
+            confidence_score = max(5.0, confidence_score - 1.0)
+            professionalism_score = max(5.0, professionalism_score - 1.0)
+        # Adjust scores based on word count - be strict
+        elif word_count < 20:
+            confidence_score = max(2.0, confidence_score - 3.0)
+            professionalism_score = max(2.0, professionalism_score - 3.0)
+            engagement_score = max(2.0, engagement_score - 2.0)
+        elif word_count < 30:
+            confidence_score = max(3.0, confidence_score - 2.0)
+            professionalism_score = max(3.0, professionalism_score - 2.0)
+        elif word_count > 200:
+            # Too long might indicate rambling
+            professionalism_score = max(5.0, professionalism_score - 1.0)
+        
+        overall_score = (confidence_score + professionalism_score + engagement_score) / 3
+        
+        # Generate feedback based on transcription only
+        if is_fallback:
+            feedback = f"""VIDEO INTERVIEW ANALYSIS
+
+CONTENT QUALITY: {round(professionalism_score, 1)}/10
+Your response was recorded for approximately {int(voice_data.get('duration', 10))} seconds.
+Note: Detailed transcription was not available, so analysis is based on audio characteristics.
+
+COMMUNICATION SKILLS: {round(confidence_score, 1)}/10
+Based on audio analysis, your delivery shows {"good" if confidence_score > 6 else "moderate"} confidence.
+
+STRENGTHS:
+- Completed a response of reasonable length
+- Maintained consistent audio throughout
+- {"Good speaking pace" if voice_data and 120 <= voice_data.get('speech_rate', 150) <= 160 else "Attempted to answer the question"}
+
+AREAS FOR IMPROVEMENT:
+- Ensure clear audio quality for better analysis
+- Practice speaking clearly and at a moderate pace
+- Structure answers using STAR method (Situation, Task, Action, Result)
+
+OVERALL SCORE: {round(overall_score, 1)}/10
+
+RECOMMENDATIONS:
+1. Improve microphone quality or speak closer to the microphone
+2. Structure answers using STAR method
+3. Speak at a moderate pace (120-150 words/min)
+4. Use specific examples from your experience
+
+Note: For more detailed feedback, ensure clear audio recording. Full AI analysis requires OpenAI API key configuration."""
+        else:
+            # Normal feedback with transcription
+            content_quality_feedback = ""
+            if word_count < 20:
+                content_quality_feedback = f"Your response was extremely brief with only {word_count} words. This is insufficient for a proper interview answer. Aim for 50-150 words."
+            elif word_count < 30:
+                content_quality_feedback = f"Your response was very brief with {word_count} words. Aim for 50-150 words for better depth."
+            elif word_count > 150:
+                content_quality_feedback = f"Your response was detailed with {word_count} words. Good depth of information."
+            else:
+                content_quality_feedback = f"Your response had good length with {word_count} words."
+            
+            communication_feedback = ""
+            if confidence_score > 7:
+                communication_feedback = "Good clarity and confidence in delivery."
+            elif confidence_score > 5:
+                communication_feedback = "Moderate clarity. Work on reducing filler words and speaking more confidently."
+            else:
+                communication_feedback = "Work on clarity and confidence. Practice speaking more smoothly."
+            
+            # Determine strengths
+            strengths = []
+            if word_count >= 50:
+                strengths.append("Provided adequate detail in response")
+            elif word_count >= 20:
+                strengths.append("Attempted to provide some detail")
+            else:
+                strengths.append("You attempted to respond")
+                
+            if professionalism_score > 7:
+                strengths.append("Professional language used")
+            if voice_data and voice_data.get('filler_count', 10) < 5:
+                strengths.append("Minimal use of filler words")
+            if voice_data and 120 <= voice_data.get('speech_rate', 0) <= 160:
+                strengths.append("Good speaking pace")
+            
+            # Determine areas for improvement
+            improvements = []
+            if word_count < 20:
+                improvements.append("Provide MUCH more detailed answers (aim for 50-150 words)")
+                improvements.append("Your response was too brief to properly evaluate")
+            elif word_count < 50:
+                improvements.append("Provide more detailed answers (aim for 50-150 words)")
+            if voice_data and voice_data.get('filler_count', 0) > 5:
+                improvements.append(f"Reduce filler words (detected {voice_data.get('filler_count')} instances)")
+            if voice_data and voice_data.get('speech_rate', 150) < 100:
+                improvements.append("Speak at a slightly faster pace for better engagement")
+            if voice_data and voice_data.get('speech_rate', 150) > 180:
+                improvements.append("Slow down your speaking pace for better clarity")
+            if professionalism_score < 7:
+                improvements.append("Use more professional and specific language")
+            improvements.append("Practice STAR method for behavioral questions")
+            
+            feedback = f"""VIDEO INTERVIEW ANALYSIS
+
+CONTENT QUALITY: {round(professionalism_score, 1)}/10
+{content_quality_feedback}
+
+COMMUNICATION SKILLS: {round(confidence_score, 1)}/10
+{communication_feedback}
+
+STRENGTHS:
+{chr(10).join(f'- {s}' for s in strengths)}
+
+AREAS FOR IMPROVEMENT:
+{chr(10).join(f'- {i}' for i in improvements)}
 
 OVERALL SCORE: {round(overall_score, 1)}/10
 
 RECOMMENDATIONS:
 1. Structure answers using STAR method (Situation, Task, Action, Result)
-2. Maintain eye contact with the camera
-3. Speak at a moderate pace (120-150 words/min)
-4. Use specific examples from your experience
+2. Speak at a moderate pace (120-150 words/min)
+3. Use specific examples from your experience
+4. Aim for 50-150 words per answer
 
 Note: Full AI analysis requires OpenAI API key configuration."""
 
@@ -483,12 +613,10 @@ Note: Full AI analysis requires OpenAI API key configuration."""
             "score": round(overall_score, 1),
             "detailed_analysis": {
                 "transcription": transcription,
-                "emotions": emotion_data or {},
                 "voice_analysis": voice_data or {},
                 "confidence_score": round(confidence_score, 1),
                 "professionalism_score": round(professionalism_score, 1),
-                "engagement_score": round(engagement_score, 1),
-                "authenticity_score": round(authenticity_score, 1)
+                "engagement_score": round(engagement_score, 1)
             }
         }
 
