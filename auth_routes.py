@@ -37,6 +37,8 @@ try:
     PASSWORD_RESET_AVAILABLE = True
 except ImportError as e:
     PASSWORD_RESET_AVAILABLE = False
+    password_reset_storage = None
+    send_password_reset_email = None
     logger.warning(f"⚠️  Password reset service not available: {e}")
 
 logger = logging.getLogger(__name__)

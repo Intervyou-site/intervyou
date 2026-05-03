@@ -4189,15 +4189,19 @@ try:
     from auth_routes import router as auth_router
     app.include_router(auth_router)
     logger.info("✅ Auth routes loaded")
-except ImportError:
-    logger.warning("⚠️  Auth routes module not found")
+except ImportError as e:
+    logger.warning(f"⚠️  Auth routes module not found: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading auth routes: {e}")
 
 try:
     from online_ide import ide_router
     app.include_router(ide_router)
     logger.info("✅ Online IDE routes loaded")
-except ImportError:
-    logger.warning("⚠️  Online IDE module not found")
+except ImportError as e:
+    logger.warning(f"⚠️  Online IDE module not found: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading IDE routes: {e}")
 
 # ================================
 # NEW REDESIGNED UI ROUTES (TESTING)
