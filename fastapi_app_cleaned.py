@@ -739,6 +739,16 @@ async def startup_event():
     logger.info(f"📊 Database URL: {database_url[:20]}...")  # Log first 20 chars only
     logger.info(f"🌍 Environment: {os.getenv('ENVIRONMENT', 'development')}")
     
+    # Log email configuration status for debugging
+    logger.info("=" * 70)
+    logger.info("📧 EMAIL CONFIGURATION CHECK:")
+    logger.info(f"📧 MAIL_USERNAME: {os.environ.get('MAIL_USERNAME', 'NOT SET')}")
+    logger.info(f"📧 MAIL_PASSWORD present: {bool(os.environ.get('MAIL_PASSWORD'))}")
+    logger.info(f"📧 MAIL_PASSWORD length: {len(os.environ.get('MAIL_PASSWORD', ''))}")
+    logger.info(f"📧 SMTP_HOST: {os.environ.get('SMTP_HOST', 'NOT SET')}")
+    logger.info(f"📧 SMTP_PORT: {os.environ.get('SMTP_PORT', 'NOT SET')}")
+    logger.info("=" * 70)
+    
     # Skip heavy model preloading on startup to speed up healthcheck
     # Models will be loaded on-demand when needed
     logger.info("⚡ Skipping model preload for faster startup")

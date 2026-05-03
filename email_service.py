@@ -10,9 +10,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-# Force reload environment variables
-from dotenv import load_dotenv
-load_dotenv(override=True)  # Override existing env vars
+# Don't use dotenv in production - Railway provides env vars directly
+# Only load .env for local development
+if os.getenv("ENVIRONMENT") != "production":
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +22,24 @@ class EmailService:
     """Email service for sending OTP and notifications"""
     
     def __init__(self):
-        self.smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.mail_username = os.getenv("MAIL_USERNAME")
-        self.mail_password = os.getenv("MAIL_PASSWORD")
-        self.mail_from = os.getenv("MAIL_FROM", self.mail_username)
-        self.mail_from_name = os.getenv("MAIL_FROM_NAME", "IntervYou Support")
+        # Get environment variables directly from os.environ (Railway way)
+        self.smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+        self.smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        self.mail_username = os.environ.get("MAIL_USERNAME")
+        self.mail_password = os.environ.get("MAIL_PASSWORD")
+        self.mail_from = os.environ.get("MAIL_FROM", self.mail_username)
+        self.mail_from_name = os.environ.get("MAIL_FROM_NAME", "IntervYou Support")
+        
+        # Debug logging
+        logger.info(f"🔍 Email Service Initialization:")
+        logger.info(f"🔍 ENVIRONMENT: {os.environ.get('ENVIRONMENT', 'not set')}")
+        logger.info(f"🔍 SMTP_HOST: {self.smtp_host}")
+        logger.info(f"🔍 SMTP_PORT: {self.smtp_port}")
+        logger.info(f"🔍 MAIL_USERNAME present: {bool(self.mail_username)}")
+        logger.info(f"🔍 MAIL_USERNAME value: {self.mail_username if self.mail_username else 'NOT SET'}")
+        logger.info(f"🔍 MAIL_PASSWORD present: {bool(self.mail_password)}")
+        logger.info(f"🔍 MAIL_PASSWORD length: {len(self.mail_password) if self.mail_password else 0}")
+        logger.info(f"🔍 MAIL_FROM: {self.mail_from}")
         
         # Check if email is configured
         self.is_configured = bool(self.mail_username and self.mail_password)
