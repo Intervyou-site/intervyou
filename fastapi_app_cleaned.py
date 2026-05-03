@@ -253,13 +253,20 @@ features = FeatureFlags()
 # ================================
 
 # Database setup
-if Config.DATABASE_URL.startswith("sqlite"):
+# Railway provides DATABASE_URL automatically for PostgreSQL
+database_url = os.environ.get("DATABASE_URL", Config.DATABASE_URL)
+
+# Handle Railway's postgres:// URL (needs to be postgresql://)
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+if database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
-    engine = create_engine(Config.DATABASE_URL, connect_args=connect_args)
+    engine = create_engine(database_url, connect_args=connect_args)
 else:
     # PostgreSQL/Production with connection pooling
     engine = create_engine(
-        Config.DATABASE_URL,
+        database_url,
         pool_size=5,
         max_overflow=10,
         pool_pre_ping=True,
@@ -726,18 +733,13 @@ app_state = ApplicationState()
 async def startup_event():
     """Initialize application on startup"""
     logger.info("🚀 Starting IntervYou application...")
+    logger.info(f"📊 Database URL: {database_url[:20]}...")  # Log first 20 chars only
+    logger.info(f"🌍 Environment: {os.getenv('ENVIRONMENT', 'development')}")
     
-    # Preload Hugging Face models if available
-    if features.huggingface_available:
-        try:
-            logger.info("🤗 Preloading Hugging Face models...")
-            from huggingface_utils import preload_models
-            preload_models()
-            logger.info("✅ Hugging Face models preloaded successfully")
-        except Exception as e:
-            logger.error(f"⚠️  Hugging Face model preload failed: {e}")
-    
-    logger.info("✅ Application startup complete")
+    # Skip heavy model preloading on startup to speed up healthcheck
+    # Models will be loaded on-demand when needed
+    logger.info("⚡ Skipping model preload for faster startup")
+    logger.info("✅ Application startup complete - ready to serve requests")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -753,19 +755,18 @@ async def shutdown_event():
 @app.get("/health")
 def health_check():
     """Health check endpoint for monitoring and load balancers"""
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "version": "2.0.0",
-        "features": {
-            "huggingface": features.huggingface_available,
-            "ai_detection": features.ai_detection_available,
-            "xlnet": features.xlnet_available,
-            "smart_generator": features.smart_generator_available,
-            "language_tool": features.language_tool_available,
-            "sentence_transformers": features.sentence_transformers_available
+    try:
+        return {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": "2.0.0"
         }
-    }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
 
 @app.get("/api/session/check")
 def check_session(request: Request, db=Depends(get_db)):
