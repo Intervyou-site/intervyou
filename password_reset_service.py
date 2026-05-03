@@ -18,19 +18,19 @@ class PasswordResetStorage:
         self.otps: Dict[str, dict] = {}
         self.cooldowns: Dict[str, datetime] = {}
     
-    def generate_otp(self, email: str, length: int = 6) -> str:
-        """Generate a random OTP"""
+    def create_otp(self, email: str, expiry_minutes: int = 10, length: int = 6) -> str:
+        """Generate and store a random OTP"""
         otp = ''.join(secrets.choice(string.digits) for _ in range(length))
         
-        # Store OTP with expiry (10 minutes)
+        # Store OTP with expiry
         self.otps[email] = {
             'otp': otp,
             'created_at': datetime.utcnow(),
-            'expires_at': datetime.utcnow() + timedelta(minutes=10),
+            'expires_at': datetime.utcnow() + timedelta(minutes=expiry_minutes),
             'attempts': 0
         }
         
-        logger.info(f"Generated OTP for {email}: {otp}")
+        logger.info(f"📧 Generated OTP for {email}: {otp}")
         return otp
     
     def verify_otp(self, email: str, otp: str, max_attempts: int = 3) -> Tuple[bool, str]:
@@ -76,7 +76,7 @@ class PasswordResetStorage:
             del self.cooldowns[email]
             return False, 0
     
-    def set_cooldown(self, email: str):
+    def set_cooldown(self, email: str, cooldown_seconds: int = 60):
         """Set cooldown for email"""
         self.cooldowns[email] = datetime.utcnow()
     
@@ -90,17 +90,29 @@ class PasswordResetStorage:
 # Global instance
 password_reset_storage = PasswordResetStorage()
 
-def send_password_reset_email(email: str, otp: str) -> bool:
+def send_password_reset_email(email: str, otp: str, expiry_minutes: int = 10) -> bool:
     """
     Send password reset email with OTP
     For now, just logs the OTP (in production, use actual email service)
     """
     try:
-        logger.info(f"📧 Password Reset OTP for {email}: {otp}")
-        logger.info(f"📧 (In production, this would be sent via email)")
+        logger.info("=" * 60)
+        logger.info(f"📧 PASSWORD RESET OTP")
+        logger.info(f"📧 Email: {email}")
+        logger.info(f"📧 OTP Code: {otp}")
+        logger.info(f"📧 Valid for: {expiry_minutes} minutes")
+        logger.info("=" * 60)
+        logger.info("⚠️  In production, this would be sent via email service")
+        logger.info("⚠️  For now, check Railway logs to see the OTP")
         
         # TODO: Integrate with actual email service
-        # For now, we'll just log it so you can see it in Railway logs
+        # Example with your existing email config:
+        # from email_service import send_email
+        # send_email(
+        #     to=email,
+        #     subject="Password Reset OTP",
+        #     body=f"Your password reset code is: {otp}\nValid for {expiry_minutes} minutes."
+        # )
         
         return True
     except Exception as e:
