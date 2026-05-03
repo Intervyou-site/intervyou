@@ -110,7 +110,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
                 name=name,
                 email=email,
                 password=get_password_hash(random_password),
-                email_verified=True  # OAuth emails are pre-verified
+                email_verified=1  # OAuth emails are pre-verified
             )
             db.add(user)
             db.commit()
@@ -120,7 +120,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         else:
             # Mark email as verified if not already
             if not user.email_verified:
-                user.email_verified = True
+                user.email_verified = 1
                 db.commit()
             add_flash(request, f"Welcome back {name}!", "success")
             logger.info(f"✅ User logged in via Google OAuth: {email}")
